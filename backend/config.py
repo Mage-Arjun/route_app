@@ -1,29 +1,42 @@
-import os
-from pydantic_settings import BaseSettings
+from functools import lru_cache
+from pathlib import Path
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
+BASE_DIR = Path(__file__).resolve().parent
 
 class Settings(BaseSettings):
-    SECRET_KEY: str = "dev-only-change-this-in-production"
-    DATABASE_URL: str = "sqlite:///./route_app.db"
-    ENV: str = "development"
-    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8080"
+    model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="ignore")
+    APP_NAME: str = "RouteOS"
+    APP_ENV: str = "development"
+    SECRET_KEY: str = "dev-change-this-secret"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
-
-    @property
-    def cors_origin_list(self) -> list[str]:
-        return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+    DATABASE_URL: str = "sqlite:///./data/routeos.db"
+    HOST: str = "0.0.0.0"
+    PORT: int = 8000
+    TUI_BACKEND_URL: str = "http://127.0.0.1:8000"
+    TUI_EMAIL: str = "admin@routeos.local"
+    TUI_PASSWORD: str = "admin123"
+    GPS_STALE_THRESHOLD: int = 300
+    AUTOMATION_ENABLED: bool = True
+    SEED_DEMO_DATA: bool = True
+    VERSION: str = "1.0.0"
 
     @property
     def is_production(self) -> bool:
-        return self.ENV == "production"
+        return self.APP_ENV.lower() == "production"
 
-    @property
-    def is_sqlite(self) -> bool:
-        return self.DATABASE_URL.startswith("sqlite")
+    def validate_runtime(self) -> None:
+        if not self.is_production:
+            return
+        if self.SECRET_KEY == "dev-change-this-secret" or len(self.SECRET_KEY) < 32:
+            raise RuntimeError("SECRET_KEY must be changed to a strong value in production")
+        if self.TUI_PASSWORD in {"admin123", ""}:
+            raise RuntimeError("TUI_PASSWORD must be changed in production")
+        if self.ACCESS_TOKEN_EXPIRE_MINUTES <= 0:
+            raise RuntimeError("ACCESS_TOKEN_EXPIRE_MINUTES must be positive")
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
 
-
-settings = Settings()
+settings = get_settings()

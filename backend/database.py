@@ -1,38 +1,35 @@
+from pathlib import Path
 from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from config import settings
 
-DATABASE_URL = settings.DATABASE_URL
+# Resolve the demo SQLite database from this backend package, not from the
+# caller's current working directory. This prevents a second empty database
+# when somebody starts Uvicorn from the project root or another shell.
+database_url = settings.DATABASE_URL
+if database_url.startswith("sqlite:///./"):
+    relative_path = database_url.removeprefix("sqlite:///./")
+    database_url = f"sqlite:///{Path(__file__).resolve().parent / relative_path}"
 
-# Render/Railway may use postgres:// — SQLAlchemy needs postgresql://
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+if database_url.startswith("sqlite"):
+    if "///" in database_url:
+        Path(database_url.split("///", 1)[-1]).parent.mkdir(parents=True, exist_ok=True)
+    engine = create_engine(database_url, connect_args={"check_same_thread": False}, pool_pre_ping=True)
+else:
+    engine = create_engine(database_url.replace("postgres://", "postgresql://", 1), pool_pre_ping=True, pool_size=5)
 
-connect_args = {}
-if settings.is_sqlite:
-    connect_args = {"check_same_thread": False}
-
-engine = create_engine(
-    DATABASE_URL,
-    connect_args=connect_args,
-    pool_pre_ping=True,
-    **({} if settings.is_sqlite else {"pool_size": 5, "max_overflow": 10}),
-)
-
-if settings.is_sqlite:
+if database_url.startswith("sqlite"):
     @event.listens_for(engine, "connect")
-    def set_sqlite_pragma(dbapi_conn, connection_record):
-        cursor = dbapi_conn.cursor()
+    def _sqlite_pragmas(connection, _record):
+        cursor = connection.cursor()
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
 class Base(DeclarativeBase):
     pass
 
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 def get_db():
     db = SessionLocal()
@@ -40,3 +37,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
+def init_db() -> None:
+    from models import BaseModel  # noqa: F401
+    Base.metadata.create_all(bind=engine)

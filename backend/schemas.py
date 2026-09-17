@@ -1,377 +1,136 @@
-from datetime import datetime, date
-from typing import Optional, List, Any, Literal
-from pydantic import BaseModel, EmailStr, Field
-
-
-# ─── Auth ────────────────────────────────────────────────
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-    user: "UserOut"
+from datetime import datetime
+from typing import Any, Literal
+from pydantic import BaseModel, ConfigDict, Field
 
 class LoginRequest(BaseModel):
     email: str
     password: str
 
-
-class DriverRegisterRequest(BaseModel):
-    name: str = Field(min_length=2, max_length=100)
-    email: EmailStr
-    password: str = Field(min_length=6, max_length=128)
-    phone: Optional[str] = None
-
-
-class LocationPush(BaseModel):
-    lat: float
-    lng: float
-    accuracy: Optional[float] = None
-    trip_id: Optional[int] = None
-    timestamp: str  # ISO8601
-
-
-# ─── Users ───────────────────────────────────────────────
-class UserCreate(BaseModel):
-    name: str = Field(min_length=2, max_length=100)
-    email: EmailStr
-    password: str = Field(min_length=6, max_length=128)
-    role: Literal["admin", "driver", "supervisor"] = "driver"
-    phone: Optional[str] = None
-
-class UserUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=100)
-    phone: Optional[str] = None
-    role: Optional[Literal["admin", "driver", "supervisor"]] = None
-    status: Optional[Literal["active", "inactive"]] = None
-
 class UserOut(BaseModel):
-    id: int
-    name: str
-    email: str
-    role: str
-    phone: Optional[str] = None
-    status: str
-    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+    id: int; email: str; role: str; status: str; created_at: datetime
 
-    class Config:
-        from_attributes = True
+class Token(BaseModel):
+    access_token: str; token_type: str = "bearer"; user: UserOut
 
+class PersonCreate(BaseModel):
+    identifier: str = Field(min_length=2, max_length=32)
+    name: str = Field(min_length=2, max_length=120)
 
-# ─── Customers ───────────────────────────────────────────
-class CustomerCreate(BaseModel):
-    name: str = Field(min_length=2, max_length=200)
-    address: Optional[str] = None
+class VehicleCreate(BaseModel):
+    identifier: str = Field(min_length=2, max_length=32)
+    name: str = Field(min_length=2, max_length=120)
+    type: str = "van"
+
+class LocationCreate(BaseModel):
+    code: str = Field(min_length=2, max_length=32)
+    name: str = Field(min_length=2, max_length=120)
+    type: str = "place"
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
-    contact_person: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    customer_type: Literal["retail", "wholesale", "hotel", "pharmacy"] = "retail"
-    customer_code: Optional[str] = None
-    preferred_visit_time: Optional[str] = None
-    service_duration_mins: int = Field(15, ge=5, le=120)
-    visit_days: Optional[str] = "[]"
-    notes: Optional[str] = None
 
-class CustomerUpdate(BaseModel):
-    name: Optional[str] = None
-    address: Optional[str] = None
-    latitude: Optional[float] = Field(None, ge=-90, le=90)
-    longitude: Optional[float] = Field(None, ge=-180, le=180)
-    contact_person: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    customer_type: Optional[Literal["retail", "wholesale", "hotel", "pharmacy"]] = None
-    preferred_visit_time: Optional[str] = None
-    service_duration_mins: Optional[int] = Field(None, ge=5, le=120)
-    visit_days: Optional[str] = None
-    notes: Optional[str] = None
-    status: Optional[Literal["active", "inactive"]] = None
+class JourneyCreate(BaseModel):
+    identifier: str = Field(min_length=2, max_length=32)
+    vehicle_id: int
+    origin_location_id: int
+    destination_location_id: int | None = None
 
-class CustomerOut(BaseModel):
-    id: int
-    name: str
-    address: Optional[str] = None
-    latitude: float
-    longitude: float
-    contact_person: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    customer_type: str
-    customer_code: Optional[str] = None
-    preferred_visit_time: Optional[str] = None
-    service_duration_mins: int
-    visit_days: Optional[str] = None
-    notes: Optional[str] = None
-    status: str
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
+class LocationUpdate(BaseModel):
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
 
 
-# ─── Vehicles ────────────────────────────────────────────
-class VehicleCreate(BaseModel):
-    vehicle_number: str
-    registration: Optional[str] = None
-    vehicle_type: str = "van"
-    capacity_kg: float = 500.0
-    assigned_driver_id: Optional[int] = None
-
-class VehicleUpdate(BaseModel):
-    vehicle_number: Optional[str] = None
-    registration: Optional[str] = None
-    vehicle_type: Optional[Literal["van", "truck", "car", "bike"]] = None
-    capacity_kg: Optional[float] = Field(None, gt=0)
-    assigned_driver_id: Optional[int] = None
-    status: Optional[Literal["active", "inactive"]] = None
-
-class VehicleOut(BaseModel):
-    id: int
-    vehicle_number: str
-    registration: Optional[str] = None
-    vehicle_type: str
-    capacity_kg: float
-    assigned_driver_id: Optional[int] = None
-    assigned_driver: Optional[UserOut] = None
-    status: str
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
+class CustomerCreate(BaseModel):
+    code: str = Field(min_length=2, max_length=32)
+    name: str = Field(min_length=2, max_length=160)
+    contact_name: str | None = Field(default=None, max_length=120)
+    phone: str | None = Field(default=None, max_length=32)
+    email: str | None = Field(default=None, max_length=160)
+    address: str | None = None
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+    service_notes: str | None = None
+    status: str = Field(default="active", max_length=24)
 
 
-# ─── Route Stops ─────────────────────────────────────────
-class RouteStopOut(BaseModel):
-    id: int
-    route_id: int
-    customer_id: int
-    sequence: int
-    planned_arrival_time: Optional[str] = None
-    service_duration_mins: int
-    notes: Optional[str] = None
-    status: str
-    customer: CustomerOut
+class CustomerUpdate(CustomerCreate):
+    pass
 
-    class Config:
-        from_attributes = True
+
+class RouteCreate(BaseModel):
+    code: str = Field(min_length=2, max_length=32)
+    name: str = Field(min_length=2, max_length=160)
+    description: str | None = None
+    assigned_driver_id: int | None = None
+    assigned_vehicle_id: int | None = None
+    status: str = Field(default="active", max_length=24)
+
+
+class RouteUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=160)
+    description: str | None = None
+    assigned_driver_id: int | None = None
+    assigned_vehicle_id: int | None = None
+    status: str | None = Field(default=None, max_length=24)
+
 
 class RouteStopCreate(BaseModel):
     customer_id: int
-    sequence: Optional[int] = None  # if None, use smart insertion
-    planned_arrival_time: Optional[str] = None
-    service_duration_mins: int = 15
-    notes: Optional[str] = None
-
-class QuickStopCreate(BaseModel):
-    name: str
-    latitude: float
-    longitude: float
-    address: Optional[str] = None
-    phone: Optional[str] = None
-    notes: Optional[str] = None
-    sequence: Optional[int] = None
-    service_duration_mins: int = 15
-
-class StopReorderRequest(BaseModel):
-    stop_ids: List[int]  # ordered list of route_stop IDs
+    sequence: int = Field(ge=1)
+    planned_arrival_time: str | None = Field(default=None, max_length=16)
+    service_duration_mins: int = Field(default=10, ge=1, le=480)
+    notes: str | None = None
 
 
-
-# ─── Routes ──────────────────────────────────────────────
-class RouteCreate(BaseModel):
-    name: str
-    area: Optional[str] = None
-    working_days: Optional[str] = "[]"
-    start_lat: Optional[float] = None
-    start_lng: Optional[float] = None
-    start_address: Optional[str] = None
-    end_lat: Optional[float] = None
-    end_lng: Optional[float] = None
-    end_address: Optional[str] = None
-    assigned_driver_id: Optional[int] = None
-    assigned_vehicle_id: Optional[int] = None
-
-class RouteUpdate(BaseModel):
-    name: Optional[str] = None
-    area: Optional[str] = None
-    working_days: Optional[str] = None
-    start_address: Optional[str] = None
-    end_address: Optional[str] = None
-    assigned_driver_id: Optional[int] = None
-    assigned_vehicle_id: Optional[int] = None
-    status: Optional[str] = None
-
-class RouteOut(BaseModel):
-    id: int
-    name: str
-    area: Optional[str] = None
-    working_days: Optional[str] = None
-    start_lat: Optional[float] = None
-    start_lng: Optional[float] = None
-    start_address: Optional[str] = None
-    end_lat: Optional[float] = None
-    end_lng: Optional[float] = None
-    end_address: Optional[str] = None
-    assigned_driver_id: Optional[int] = None
-    assigned_vehicle_id: Optional[int] = None
-    version: int
-    status: str
-    created_at: datetime
-    assigned_driver: Optional[UserOut] = None
-    assigned_vehicle: Optional[VehicleOut] = None
-    stops: List[RouteStopOut] = []
-
-    class Config:
-        from_attributes = True
+class ReorderStopsRequest(BaseModel):
+    stop_ids: list[int] = Field(min_length=1)
 
 
-# ─── Smart Insertion ─────────────────────────────────────
-class InsertionOption(BaseModel):
-    position: int          # insert BEFORE this sequence index (1-based)
-    after_stop_name: Optional[str] = None
-    before_stop_name: Optional[str] = None
-    additional_distance_km: float
-    additional_time_mins: float
-    is_recommended: bool = False
-    used_real_roads: bool = False  # True = OSRM road network, False = Haversine fallback
-
-class InsertionResult(BaseModel):
-    customer_id: int
-    customer_name: str
-    options: List[InsertionOption]
-    recommended_position: int
-
-
-# ─── Route Changes ───────────────────────────────────────
-class RouteChangeCreate(BaseModel):
-    route_id: int
-    customer_id: int
-    recommended_sequence: int
-    additional_distance_km: float
-    additional_time_mins: float = 0.0
-
-class RouteChangeOut(BaseModel):
-    id: int
-    route_id: int
-    customer_id: int
-    recommended_sequence: int
-    additional_distance_km: float
-    additional_time_mins: float
-    status: str
-    requested_by_id: Optional[int] = None
-    approved_by_id: Optional[int] = None
-    requested_by: Optional[UserOut] = None
-    approved_by: Optional[UserOut] = None
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-    customer: CustomerOut
-    route: Optional[RouteOut] = None
-
-    class Config:
-        from_attributes = True
-
-
-# ─── Route Versions ──────────────────────────────────────
-class RouteVersionOut(BaseModel):
-    id: int
-    route_id: int
-    version: int
-    change_summary: Optional[str] = None
-    changed_by_id: Optional[int] = None
-    changed_by: Optional[UserOut] = None
-    created_at: datetime
-    snapshot: Optional[str] = None
-
-    class Config:
-        from_attributes = True
-
-
-# ─── Trips ───────────────────────────────────────────────
 class TripCreate(BaseModel):
     route_id: int
-    vehicle_id: Optional[int] = None
+    driver_id: int | None = None
+    vehicle_id: int | None = None
+    trip_date: datetime | None = None
+
 
 class TripStopUpdate(BaseModel):
-    status: str  # completed / skipped / closed / refused / partial / rescheduled
-    notes: Optional[str] = None
-    driver_notes: Optional[str] = None
-    # ── Proof of Delivery ──────────────────────────────────
-    receiver_name: Optional[str] = None
-    signature_data: Optional[str] = None   # base64-encoded signature image
-    photo_url: Optional[str] = None        # server-side photo path after upload
-    failure_reason: Optional[str] = None
-    delivery_latitude: Optional[float] = None
-    delivery_longitude: Optional[float] = None
+    action: Literal["arrive", "complete", "skip", "fail"]
+    receiver_name: str | None = Field(default=None, max_length=120)
+    driver_notes: str | None = None
+    failure_reason: str | None = None
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
 
-class TripStopOut(BaseModel):
-    id: int
-    trip_id: int
-    route_stop_id: int
-    customer_id: int
-    sequence: int
-    arrival_time: Optional[datetime] = None
-    departure_time: Optional[datetime] = None
-    status: str
-    notes: Optional[str] = None
-    driver_notes: Optional[str] = None
-    # ── Proof of Delivery ──────────────────────────────────
-    receiver_name: Optional[str] = None
-    signature_data: Optional[str] = None
-    photo_url: Optional[str] = None
-    failure_reason: Optional[str] = None
-    delivery_latitude: Optional[float] = None
-    delivery_longitude: Optional[float] = None
-    completed_at: Optional[datetime] = None
-    customer: CustomerOut
 
-    class Config:
-        from_attributes = True
-
-class TripOut(BaseModel):
-    id: int
+class RouteChangeCreate(BaseModel):
     route_id: int
-    driver_id: int
-    vehicle_id: Optional[int] = None
-    date: date
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
-    total_distance_km: float
-    completed_stops: int
-    total_stops: int
-    status: str
-    created_at: datetime
-    route: Optional[RouteOut] = None
-    driver: Optional[UserOut] = None
-    vehicle: Optional[VehicleOut] = None
-    trip_stops: List[TripStopOut] = []
-
-    class Config:
-        from_attributes = True
+    customer_id: int | None = None
+    change_type: Literal["add_stop", "remove_stop", "reorder", "edit_stop"]
+    recommended_sequence: int | None = Field(default=None, ge=1)
+    additional_distance_km: float = Field(default=0, ge=0)
+    additional_time_mins: float = Field(default=0, ge=0)
+    reason: str | None = None
 
 
-# ─── Analytics ───────────────────────────────────────────
-class DashboardStats(BaseModel):
-    total_routes: int
-    active_routes: int
-    total_customers: int
-    total_vehicles: int
-    total_drivers: int
-    today_trips: int
-    today_completed_stops: int
-    today_pending_stops: int
-    pending_approvals: int
-
-class RouteAnalytics(BaseModel):
-    route_id: int
-    route_name: str
-    total_trips: int
-    avg_completion_rate: float
-    avg_distance_km: float
-    total_stops: int
-    recent_trips: List[TripOut] = []
+class RegisterRequest(BaseModel):
+    email: str
+    password: str = Field(min_length=8, max_length=72)
+    role: Literal["operator", "driver"] = "operator"
 
 
-# Update forward ref
-Token.model_rebuild()
-RouteChangeOut.model_rebuild()
-TripOut.model_rebuild()
+class ProfileUpdate(BaseModel):
+    email: str | None = None
+    current_password: str | None = None
+    new_password: str | None = Field(default=None, min_length=8, max_length=72)
+
+class CommandRequest(BaseModel):
+    command: Literal["START_JOURNEY", "PAUSE_JOURNEY", "RESUME_JOURNEY", "STOP_JOURNEY", "ASSIGN_PERSON", "UNASSIGN_PERSON", "ASSIGN_VEHICLE", "SET_DESTINATION", "CREATE_LOCATION", "RESOLVE_ALERT", "ENABLE_AUTOMATION", "DISABLE_AUTOMATION", "REFRESH_STATE"]
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+class EventOut(BaseModel):
+    id: int; event_type: str; entity_type: str; entity_id: int | None; timestamp: datetime; source: str; payload: dict[str, Any]
+    model_config = ConfigDict(from_attributes=True)
+
+class AlertOut(BaseModel):
+    id: int; severity: str; alert_type: str; entity_type: str; entity_id: int | None; message: str; status: str; created_at: datetime; resolved_at: datetime | None; payload: dict[str, Any]
+    model_config = ConfigDict(from_attributes=True)

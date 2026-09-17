@@ -1,195 +1,231 @@
 from datetime import datetime, timezone
-from sqlalchemy import (
-    Column, Integer, String, Float, DateTime, Date,
-    ForeignKey, Text, Boolean
-)
-from sqlalchemy.orm import relationship
+from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database import Base
 
+def now() -> datetime:
+    return datetime.now(timezone.utc)
 
-class User(Base):
-    __tablename__ = "users"
+class BaseModel(Base):
+    __abstract__ = True
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    email = Column(String, unique=True, index=True, nullable=False)
-    password_hash = Column(String, nullable=False)
-    role = Column(String, default="driver")  # admin / driver / supervisor
-    phone = Column(String)
-    status = Column(String, default="active")  # active / inactive
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+class Person(BaseModel):
+    __tablename__ = "people"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    identifier: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    status: Mapped[str] = mapped_column(String(24), default="inside")
+    current_location_id: Mapped[int | None] = mapped_column(ForeignKey("locations.id"))
+    current_journey_id: Mapped[int | None] = mapped_column(ForeignKey("journeys.id"))
+    current_vehicle_id: Mapped[int | None] = mapped_column(ForeignKey("vehicles.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
 
-    assigned_routes = relationship("Route", back_populates="assigned_driver", foreign_keys="Route.assigned_driver_id")
-    assigned_vehicle = relationship("Vehicle", back_populates="assigned_driver", foreign_keys="Vehicle.assigned_driver_id")
-    trips = relationship("Trip", back_populates="driver")
-
-
-class Customer(Base):
-    __tablename__ = "customers"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    address = Column(Text)
-    latitude = Column(Float, nullable=False)
-    longitude = Column(Float, nullable=False)
-    contact_person = Column(String)
-    phone = Column(String)
-    email = Column(String)
-    customer_type = Column(String, default="retail")  # retail / wholesale / hotel / pharmacy
-    customer_code = Column(String)
-    preferred_visit_time = Column(String)  # e.g. "09:00-11:00"
-    service_duration_mins = Column(Integer, default=15)
-    visit_days = Column(Text, default="[]")  # JSON array of days
-    notes = Column(Text)
-    status = Column(String, default="active")
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-
-    route_stops = relationship("RouteStop", back_populates="customer")
-
-
-class Vehicle(Base):
+class Vehicle(BaseModel):
     __tablename__ = "vehicles"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    identifier: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    type: Mapped[str] = mapped_column(String(32), default="van")
+    status: Mapped[str] = mapped_column(String(24), default="idle")
+    latitude: Mapped[float | None] = mapped_column(Float)
+    longitude: Mapped[float | None] = mapped_column(Float)
+    current_location_id: Mapped[int | None] = mapped_column(ForeignKey("locations.id"))
+    current_journey_id: Mapped[int | None] = mapped_column(ForeignKey("journeys.id"))
+    last_seen: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
 
-    id = Column(Integer, primary_key=True, index=True)
-    vehicle_number = Column(String, unique=True, nullable=False)
-    registration = Column(String)
-    vehicle_type = Column(String, default="van")  # van / truck / car / bike
-    capacity_kg = Column(Float, default=500.0)
-    assigned_driver_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    status = Column(String, default="active")
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+class Location(BaseModel):
+    __tablename__ = "locations"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    type: Mapped[str] = mapped_column(String(32), default="place")
+    latitude: Mapped[float] = mapped_column(Float)
+    longitude: Mapped[float] = mapped_column(Float)
+    status: Mapped[str] = mapped_column(String(24), default="active")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
 
-    assigned_driver = relationship("User", back_populates="assigned_vehicle", foreign_keys=[assigned_driver_id])
-    routes = relationship("Route", back_populates="assigned_vehicle")
-    trips = relationship("Trip", back_populates="vehicle")
+class Journey(BaseModel):
+    __tablename__ = "journeys"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    identifier: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    vehicle_id: Mapped[int] = mapped_column(ForeignKey("vehicles.id"))
+    origin_location_id: Mapped[int] = mapped_column(ForeignKey("locations.id"))
+    destination_location_id: Mapped[int | None] = mapped_column(ForeignKey("locations.id"))
+    status: Mapped[str] = mapped_column(String(24), default="planned")
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    arrived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
+
+class Assignment(BaseModel):
+    __tablename__ = "assignments"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    person_id: Mapped[int] = mapped_column(ForeignKey("people.id"))
+    journey_id: Mapped[int] = mapped_column(ForeignKey("journeys.id"))
+    vehicle_id: Mapped[int] = mapped_column(ForeignKey("vehicles.id"))
+    joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    left_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(24), default="active")
+
+class Event(BaseModel):
+    __tablename__ = "events"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    event_type: Mapped[str] = mapped_column(String(64), index=True)
+    entity_type: Mapped[str] = mapped_column(String(32), index=True)
+    entity_id: Mapped[int | None] = mapped_column(Integer, index=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, index=True)
+    actor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    location_id: Mapped[int | None] = mapped_column(ForeignKey("locations.id"))
+    source: Mapped[str] = mapped_column(String(24), default="system")
+    payload: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+class Alert(BaseModel):
+    __tablename__ = "alerts"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    severity: Mapped[str] = mapped_column(String(16), default="warning")
+    alert_type: Mapped[str] = mapped_column(String(48), index=True)
+    entity_type: Mapped[str] = mapped_column(String(32))
+    entity_id: Mapped[int | None] = mapped_column(Integer)
+    message: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(16), default="active", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    resolved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    payload: Mapped[dict] = mapped_column(JSON, default=dict)
+
+class User(BaseModel):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    email: Mapped[str] = mapped_column(String(160), unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+    role: Mapped[str] = mapped_column(String(24), default="operator")
+    status: Mapped[str] = mapped_column(String(16), default="active")
+    person_id: Mapped[int | None] = mapped_column(ForeignKey("people.id"), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
 
 
-class Route(Base):
+# The original operational tables remain useful for the live occupancy
+# workflow. These product tables add the delivery/logistics vocabulary without
+# forcing old imported Journey and Person records through a risky destructive
+# migration.
+class Customer(BaseModel):
+    __tablename__ = "customers"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(160))
+    contact_name: Mapped[str | None] = mapped_column(String(120))
+    phone: Mapped[str | None] = mapped_column(String(32))
+    email: Mapped[str | None] = mapped_column(String(160))
+    address: Mapped[str | None] = mapped_column(Text)
+    latitude: Mapped[float | None] = mapped_column(Float)
+    longitude: Mapped[float | None] = mapped_column(Float)
+    service_notes: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(24), default="active", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
+
+
+class Route(BaseModel):
     __tablename__ = "routes"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    area = Column(String)
-    working_days = Column(Text, default="[]")  # JSON array e.g. ["Monday","Thursday"]
-    start_lat = Column(Float)
-    start_lng = Column(Float)
-    start_address = Column(String)
-    end_lat = Column(Float)
-    end_lng = Column(Float)
-    end_address = Column(String)
-    assigned_driver_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    assigned_vehicle_id = Column(Integer, ForeignKey("vehicles.id"), nullable=True)
-    version = Column(Integer, default=1)
-    status = Column(String, default="active")
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-
-    assigned_driver = relationship("User", back_populates="assigned_routes", foreign_keys=[assigned_driver_id])
-    assigned_vehicle = relationship("Vehicle", back_populates="routes", foreign_keys=[assigned_vehicle_id])
-    stops = relationship("RouteStop", back_populates="route", order_by="RouteStop.sequence", cascade="all, delete-orphan")
-    versions = relationship("RouteVersion", back_populates="route", cascade="all, delete-orphan")
-    trips = relationship("Trip", back_populates="route")
-    pending_changes = relationship("RouteChange", back_populates="route", cascade="all, delete-orphan")
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(160))
+    description: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(24), default="active", index=True)
+    assigned_driver_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    assigned_vehicle_id: Mapped[int | None] = mapped_column(ForeignKey("vehicles.id"))
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
 
 
-class RouteStop(Base):
+class RouteStop(BaseModel):
     __tablename__ = "route_stops"
-
-    id = Column(Integer, primary_key=True, index=True)
-    route_id = Column(Integer, ForeignKey("routes.id"), nullable=False)
-    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
-    sequence = Column(Integer, nullable=False)
-    planned_arrival_time = Column(String)  # e.g. "09:30"
-    service_duration_mins = Column(Integer, default=15)
-    notes = Column(Text)
-    status = Column(String, default="active")  # active / removed
-
-    route = relationship("Route", back_populates="stops")
-    customer = relationship("Customer", back_populates="route_stops")
-    trip_stops = relationship("TripStop", back_populates="route_stop")
+    __table_args__ = (UniqueConstraint("route_id", "sequence", name="uq_route_stop_sequence"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    route_id: Mapped[int] = mapped_column(ForeignKey("routes.id", ondelete="CASCADE"), index=True)
+    customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), index=True)
+    sequence: Mapped[int] = mapped_column(Integer)
+    planned_arrival_time: Mapped[str | None] = mapped_column(String(16))
+    service_duration_mins: Mapped[int] = mapped_column(Integer, default=10)
+    notes: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(24), default="active")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
 
 
-class RouteVersion(Base):
-    __tablename__ = "route_versions"
-
-    id = Column(Integer, primary_key=True, index=True)
-    route_id = Column(Integer, ForeignKey("routes.id"), nullable=False)
-    version = Column(Integer, nullable=False)
-    snapshot = Column(Text)  # JSON snapshot of stops
-    change_summary = Column(Text)
-    changed_by_id = Column(Integer, ForeignKey("users.id"))
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-
-    route = relationship("Route", back_populates="versions")
-    changed_by = relationship("User")
-
-
-class RouteChange(Base):
-    __tablename__ = "route_changes"
-
-    id = Column(Integer, primary_key=True, index=True)
-    route_id = Column(Integer, ForeignKey("routes.id"), nullable=False)
-    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
-    recommended_sequence = Column(Integer)
-    additional_distance_km = Column(Float)
-    additional_time_mins = Column(Float)
-    status = Column(String, default="pending")  # pending / approved / rejected
-    requested_by_id = Column(Integer, ForeignKey("users.id"))
-    approved_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-
-    route = relationship("Route", back_populates="pending_changes")
-    customer = relationship("Customer")
-    requested_by = relationship("User", foreign_keys=[requested_by_id])
-    approved_by = relationship("User", foreign_keys=[approved_by_id])
-
-
-class Trip(Base):
+class Trip(BaseModel):
     __tablename__ = "trips"
-
-    id = Column(Integer, primary_key=True, index=True)
-    route_id = Column(Integer, ForeignKey("routes.id"), nullable=False)
-    driver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    vehicle_id = Column(Integer, ForeignKey("vehicles.id"), nullable=True)
-    date = Column(Date, default=lambda: datetime.now(timezone.utc).date())
-    start_time = Column(DateTime, nullable=True)
-    end_time = Column(DateTime, nullable=True)
-    total_distance_km = Column(Float, default=0.0)
-    completed_stops = Column(Integer, default=0)
-    total_stops = Column(Integer, default=0)
-    status = Column(String, default="active")  # active / completed / cancelled
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-
-    route = relationship("Route", back_populates="trips")
-    driver = relationship("User", back_populates="trips")
-    vehicle = relationship("Vehicle", back_populates="trips")
-    trip_stops = relationship("TripStop", back_populates="trip", order_by="TripStop.sequence", cascade="all, delete-orphan")
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(40), unique=True, index=True)
+    route_id: Mapped[int] = mapped_column(ForeignKey("routes.id"), index=True)
+    driver_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    vehicle_id: Mapped[int | None] = mapped_column(ForeignKey("vehicles.id"))
+    trip_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, index=True)
+    start_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    end_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    total_distance_km: Mapped[float] = mapped_column(Float, default=0)
+    status: Mapped[str] = mapped_column(String(24), default="planned", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
 
 
-class TripStop(Base):
+class TripStop(BaseModel):
     __tablename__ = "trip_stops"
+    __table_args__ = (UniqueConstraint("trip_id", "sequence", name="uq_trip_stop_sequence"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    trip_id: Mapped[int] = mapped_column(ForeignKey("trips.id", ondelete="CASCADE"), index=True)
+    route_stop_id: Mapped[int] = mapped_column(ForeignKey("route_stops.id"))
+    customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"))
+    sequence: Mapped[int] = mapped_column(Integer)
+    arrival_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    departure_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(24), default="pending", index=True)
+    notes: Mapped[str | None] = mapped_column(Text)
+    driver_notes: Mapped[str | None] = mapped_column(Text)
+    receiver_name: Mapped[str | None] = mapped_column(String(120))
+    failure_reason: Mapped[str | None] = mapped_column(Text)
+    delivery_latitude: Mapped[float | None] = mapped_column(Float)
+    delivery_longitude: Mapped[float | None] = mapped_column(Float)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
 
-    id = Column(Integer, primary_key=True, index=True)
-    trip_id = Column(Integer, ForeignKey("trips.id"), nullable=False)
-    route_stop_id = Column(Integer, ForeignKey("route_stops.id"), nullable=False)
-    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
-    sequence = Column(Integer, nullable=False)
-    arrival_time = Column(DateTime, nullable=True)
-    departure_time = Column(DateTime, nullable=True)
-    status = Column(String, default="pending")
-    # pending / completed / skipped / closed / refused / partial / rescheduled
-    notes = Column(Text)
-    driver_notes = Column(Text)
 
-    # ── Proof of Delivery (PoD) Fields ──────────────────────
-    receiver_name = Column(String, nullable=True)          # Name of person who received
-    signature_data = Column(Text, nullable=True)           # Base64 signature image data
-    photo_url = Column(String, nullable=True)              # URL/path to delivery photo
-    failure_reason = Column(String, nullable=True)         # Reason for skip/refuse/close
-    delivery_latitude = Column(Float, nullable=True)       # GPS lat at delivery time
-    delivery_longitude = Column(Float, nullable=True)      # GPS lng at delivery time
-    completed_at = Column(DateTime, nullable=True)         # Actual completion timestamp
+class ProofOfDelivery(BaseModel):
+    __tablename__ = "proofs_of_delivery"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    trip_stop_id: Mapped[int] = mapped_column(ForeignKey("trip_stops.id", ondelete="CASCADE"), unique=True)
+    receiver_name: Mapped[str] = mapped_column(String(120))
+    notes: Mapped[str | None] = mapped_column(Text)
+    signature_data: Mapped[str | None] = mapped_column(Text)
+    photo_path: Mapped[str | None] = mapped_column(String(255))
+    latitude: Mapped[float | None] = mapped_column(Float)
+    longitude: Mapped[float | None] = mapped_column(Float)
+    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
-    trip = relationship("Trip", back_populates="trip_stops")
-    route_stop = relationship("RouteStop", back_populates="trip_stops")
-    customer = relationship("Customer")
+
+class RouteChange(BaseModel):
+    __tablename__ = "route_changes"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    route_id: Mapped[int] = mapped_column(ForeignKey("routes.id"), index=True)
+    customer_id: Mapped[int | None] = mapped_column(ForeignKey("customers.id"))
+    change_type: Mapped[str] = mapped_column(String(32))
+    recommended_sequence: Mapped[int | None] = mapped_column(Integer)
+    additional_distance_km: Mapped[float] = mapped_column(Float, default=0)
+    additional_time_mins: Mapped[float] = mapped_column(Float, default=0)
+    reason: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(24), default="pending", index=True)
+    requested_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    approved_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
