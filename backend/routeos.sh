@@ -48,11 +48,12 @@ stop_existing() {
 stop_existing
 
 "$PYTHON" -m alembic upgrade head
-if "$PYTHON" -c 'from config import settings; raise SystemExit(0 if settings.SEED_DEMO_DATA else 1)'; then "$PYTHON" seed.py; fi
+# Account setup is handled by the API lifespan. The launcher deliberately
+# never invokes the full operational demo seed.
 
-# Optional import: configure BUILD1_DB explicitly or use the historical sibling path.
+# Optional migration import. It is intentionally opt-in so an unrelated or
+# historical database can never silently populate a fresh RouteOS install.
 BUILD1_DB=${BUILD1_DB:-}
-[ -n "$BUILD1_DB" ] || { [ -f "$ROOT/../Build 1/backend/route_app.db" ] && BUILD1_DB="$ROOT/../Build 1/backend/route_app.db" || true; }
 if [ -n "$BUILD1_DB" ] && [ -f "$BUILD1_DB" ]; then "$PYTHON" import_build1.py "$BUILD1_DB"; fi
 
 LOG_FILE="$ROOT/data/server.log"
@@ -75,4 +76,8 @@ if ! healthy; then echo "Backend health check failed; see $LOG_FILE" >&2; exit 1
 echo "RouteOS backend started on $HOST:$PORT"
 echo "API docs: http://127.0.0.1:$PORT/docs"
 echo "Server log: $LOG_FILE"
-exec env TUI_BACKEND_URL="$TUI_BACKEND_URL" PYTHONPATH="$PYTHONPATH" "$PYTHON" -m tui.app
+if "$PYTHON" -c 'from config import settings; raise SystemExit(0 if settings.TUI_EMAIL and settings.TUI_PASSWORD else 1)'; then
+  exec env TUI_BACKEND_URL="$TUI_BACKEND_URL" PYTHONPATH="$PYTHONPATH" "$PYTHON" -m tui.app
+fi
+echo "TUI credentials are not configured; keeping the API server in the foreground."
+wait "$SERVER_PID"

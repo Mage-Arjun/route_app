@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-final preferencesProvider = StateNotifierProvider<PreferencesNotifier, AppPreferences>((ref) {
-  return PreferencesNotifier();
-});
+final preferencesProvider =
+    StateNotifierProvider<PreferencesNotifier, AppPreferences>((ref) {
+      return PreferencesNotifier();
+    });
 
 class AppPreferences {
   final ThemeMode themeMode;
@@ -24,7 +25,8 @@ class AppPreferences {
   }) => AppPreferences(
     themeMode: themeMode ?? this.themeMode,
     notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
-    locationSharingEnabled: locationSharingEnabled ?? this.locationSharingEnabled,
+    locationSharingEnabled:
+        locationSharingEnabled ?? this.locationSharingEnabled,
   );
 }
 
@@ -62,6 +64,9 @@ class PreferencesNotifier extends StateNotifier<AppPreferences> {
 
   Future<void> setLocationSharingEnabled(bool value) async {
     state = state.copyWith(locationSharingEnabled: value);
-    await _storage.write(key: 'location_sharing_enabled', value: value.toString());
+    await _storage.write(
+      key: 'location_sharing_enabled',
+      value: value.toString(),
+    );
   }
 }

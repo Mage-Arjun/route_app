@@ -40,16 +40,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       _checkServerHealth();
     });
 
-    _pulseCtrl = AnimationController(vsync: this, duration: const Duration(seconds: 3))
-      ..repeat(reverse: true);
-    _pulseAnim = Tween<double>(begin: 0.85, end: 1.15).animate(
-      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
-    );
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat(reverse: true);
+    _pulseAnim = Tween<double>(
+      begin: 0.85,
+      end: 1.15,
+    ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
 
-    _slideCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
-    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero).animate(
-      CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOutCubic),
+    _slideCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
     );
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.15),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOutCubic));
     _slideCtrl.forward();
 
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
@@ -67,10 +74,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     if (!mounted) return;
     final clean = _currentServerUrl.trim().replaceAll(RegExp(r'/+$'), '');
     try {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(milliseconds: 1500),
-        receiveTimeout: const Duration(milliseconds: 1500),
-      ));
+      final dio = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(milliseconds: 1500),
+          receiveTimeout: const Duration(milliseconds: 1500),
+        ),
+      );
       final resp = await dio.get('$clean/docs');
       if (mounted) {
         setState(() {
@@ -98,48 +107,46 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     super.dispose();
   }
 
-
   void _login() {
     if (_formKey.currentState!.validate()) {
       HapticFeedback.mediumImpact();
-      ref.read(authProvider.notifier).login(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
+      ref
+          .read(authProvider.notifier)
+          .login(_emailController.text.trim(), _passwordController.text);
     }
   }
 
-  void _showDemoAccounts() {
+  void _showQuickLogin() {
     const accounts = [
-      ('Admin', 'admin@routeos.local', 'admin123', Icons.admin_panel_settings_outlined),
-      ('Operator', 'operator@routeos.local', 'operator123', Icons.support_agent_outlined),
-      ('Driver 1', 'driver1@routeos.local', 'driver123', Icons.local_shipping_outlined),
-      ('Driver 2', 'driver2@routeos.local', 'driver123', Icons.directions_car_outlined),
-      // These accounts are created when the optional Build 1 database is imported.
-      ('Imported driver Arun', 'arun@routeapp.com', 'driver123', Icons.local_shipping_outlined),
-      ('Imported driver Rahul', 'rahul@routeapp.com', 'driver123', Icons.directions_car_outlined),
+      ('Admin', 'admin@routeos.local', 'admin123', Icons.admin_panel_settings),
+      ('Operator', 'operator@routeos.local', 'operator123', Icons.alt_route),
+      ('Driver', 'driver@routeos.local', 'driver123', Icons.local_shipping),
     ];
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF101524),
-      isScrollControlled: true,
       builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Demo accounts', style: GoogleFonts.outfit(color: AppTheme.textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 4),
-            Text('Choose a role to fill the login form.', style: GoogleFonts.outfit(color: AppTheme.textSecondary)),
-            const SizedBox(height: 12),
-            ...accounts.map((account) => ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(backgroundColor: AppTheme.primary.withValues(alpha: .15), child: Icon(account.$4, color: AppTheme.primary)),
-              title: Text(account.$1, style: GoogleFonts.outfit(color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
-              subtitle: Text(account.$2, style: GoogleFonts.jetBrainsMono(color: AppTheme.textSecondary, fontSize: 11)),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.textMuted),
-              onTap: () { _emailController.text = account.$2; _passwordController.text = account.$3; Navigator.pop(sheetContext); _login(); },
-            )),
-          ]),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ListTile(
+              title: Text('Quick login'),
+              subtitle: Text('Local development accounts'),
+            ),
+            ...accounts.map(
+              (account) => ListTile(
+                leading: Icon(account.$4, color: AppTheme.primary),
+                title: Text(account.$1),
+                subtitle: Text(account.$2),
+                onTap: () {
+                  _emailController.text = account.$2;
+                  _passwordController.text = account.$3;
+                  Navigator.pop(sheetContext);
+                  _login();
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
       ),
     );
@@ -166,15 +173,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             final sw = Stopwatch()..start();
             try {
               final clean = targetUrl.trim().replaceAll(RegExp(r'/+$'), '');
-              final dio = Dio(BaseOptions(
-                connectTimeout: const Duration(seconds: 4),
-                receiveTimeout: const Duration(seconds: 4),
-              ));
+              final dio = Dio(
+                BaseOptions(
+                  connectTimeout: const Duration(seconds: 4),
+                  receiveTimeout: const Duration(seconds: 4),
+                ),
+              );
               final resp = await dio.get('$clean/docs');
               sw.stop();
               setModalState(() {
                 isPinging = false;
-                pingStatus = 'Connected (${sw.elapsedMilliseconds}ms) - Code ${resp.statusCode}';
+                pingStatus =
+                    'Connected (${sw.elapsedMilliseconds}ms) - Code ${resp.statusCode}';
                 statusColor = AppTheme.primary;
               });
             } catch (e) {
@@ -196,7 +206,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             ),
             decoration: BoxDecoration(
               color: const Color(0xFF101524),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
               border: Border.all(color: AppTheme.border),
             ),
             child: Column(
@@ -208,7 +220,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.hub_outlined, color: AppTheme.primary, size: 22),
+                        const Icon(
+                          Icons.hub_outlined,
+                          color: AppTheme.primary,
+                          size: 22,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Backend Connection',
@@ -221,7 +237,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       ],
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: AppTheme.textSecondary, size: 20),
+                      icon: const Icon(
+                        Icons.close,
+                        color: AppTheme.textSecondary,
+                        size: 20,
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
@@ -229,7 +249,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 const SizedBox(height: 4),
                 Text(
                   'Select connection mode or enter custom server URL:',
-                  style: GoogleFonts.outfit(color: AppTheme.textSecondary, fontSize: 13),
+                  style: GoogleFonts.outfit(
+                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -247,30 +270,66 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _presetChip('⚡ USB (localhost:8000)', 'http://localhost:8000', urlCtrl, setModalState, () => testPing('http://localhost:8000')),
-                    _presetChip('📱 Emulator (10.0.2.2)', 'http://10.0.2.2:8000', urlCtrl, setModalState, () => testPing('http://10.0.2.2:8000')),
+                    _presetChip(
+                      '⚡ USB (localhost:8000)',
+                      'http://localhost:8000',
+                      urlCtrl,
+                      setModalState,
+                      () => testPing('http://localhost:8000'),
+                    ),
+                    _presetChip(
+                      '📱 Emulator (10.0.2.2)',
+                      'http://10.0.2.2:8000',
+                      urlCtrl,
+                      setModalState,
+                      () => testPing('http://10.0.2.2:8000'),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
 
                 TextField(
                   controller: urlCtrl,
-                  style: GoogleFonts.jetBrainsMono(color: AppTheme.textPrimary, fontSize: 13),
+                  style: GoogleFonts.jetBrainsMono(
+                    color: AppTheme.textPrimary,
+                    fontSize: 13,
+                  ),
                   decoration: InputDecoration(
                     labelText: 'Server Base URL',
-                    labelStyle: GoogleFonts.outfit(color: AppTheme.textSecondary),
+                    labelStyle: GoogleFonts.outfit(
+                      color: AppTheme.textSecondary,
+                    ),
                     filled: true,
                     fillColor: const Color(0xFF171E30),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.border)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.border)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primary)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppTheme.border),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppTheme.border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppTheme.primary),
+                    ),
                     suffixIcon: isPinging
                         ? const Padding(
                             padding: EdgeInsets.all(12),
-                            child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary)),
+                            child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppTheme.primary,
+                              ),
+                            ),
                           )
                         : IconButton(
-                            icon: const Icon(Icons.bolt, color: AppTheme.neonCyan),
+                            icon: const Icon(
+                              Icons.bolt,
+                              color: AppTheme.neonCyan,
+                            ),
                             tooltip: 'Test Ping',
                             onPressed: () => testPing(urlCtrl.text),
                           ),
@@ -281,7 +340,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   const SizedBox(height: 8),
                   Text(
                     pingStatus!,
-                    style: GoogleFonts.jetBrainsMono(color: statusColor, fontSize: 11, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.jetBrainsMono(
+                      color: statusColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
 
@@ -294,11 +357,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           foregroundColor: AppTheme.neonCyan,
                           side: const BorderSide(color: AppTheme.neonCyan),
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         onPressed: () => testPing(urlCtrl.text),
                         icon: const Icon(Icons.wifi_find, size: 18),
-                        label: Text('Ping Test', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+                        label: Text(
+                          'Ping Test',
+                          style: GoogleFonts.outfit(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -308,7 +378,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           backgroundColor: AppTheme.primary,
                           foregroundColor: const Color(0xFF0A0D14),
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         onPressed: () async {
                           final clean = urlCtrl.text.trim();
@@ -319,17 +391,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               Navigator.pop(context);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Server connected to $clean', style: GoogleFonts.outfit(color: Colors.white)),
+                                  content: Text(
+                                    'Server connected to $clean',
+                                    style: GoogleFonts.outfit(
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                   backgroundColor: AppTheme.primary,
                                   behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
                               );
                             }
                           }
                         },
                         icon: const Icon(Icons.check, size: 18),
-                        label: Text('Save & Apply', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+                        label: Text(
+                          'Save & Apply',
+                          style: GoogleFonts.outfit(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -358,9 +442,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primary.withValues(alpha: 0.15) : const Color(0xFF171E30),
+          color: isSelected
+              ? AppTheme.primary.withValues(alpha: 0.15)
+              : const Color(0xFF171E30),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: isSelected ? AppTheme.primary : AppTheme.border),
+          border: Border.all(
+            color: isSelected ? AppTheme.primary : AppTheme.border,
+          ),
         ),
         child: Text(
           label,
@@ -383,10 +471,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(next.error!, style: GoogleFonts.outfit(color: Colors.white)),
+            content: Text(
+              next.error!,
+              style: GoogleFonts.outfit(color: Colors.white),
+            ),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -405,7 +498,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 24,
+                  ),
                   child: SlideTransition(
                     position: _slideAnim,
                     child: FadeTransition(
@@ -422,16 +518,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             Text(
                               'RouteOS',
                               style: GoogleFonts.outfit(
-                                fontSize: 40, fontWeight: FontWeight.w800,
-                                color: AppTheme.textPrimary, letterSpacing: -1,
+                                fontSize: 40,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.textPrimary,
+                                letterSpacing: -1,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               'Distribution Intelligence System',
                               style: GoogleFonts.outfit(
-                                fontSize: 13, color: AppTheme.textSecondary,
-                                letterSpacing: 1.5, fontWeight: FontWeight.w400,
+                                fontSize: 13,
+                                color: AppTheme.textSecondary,
+                                letterSpacing: 1.5,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                             const SizedBox(height: 40),
@@ -445,223 +545,245 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                   Text(
                                     'Welcome back',
                                     style: GoogleFonts.outfit(
-                                      fontSize: 22, fontWeight: FontWeight.w700,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w700,
                                       color: AppTheme.textPrimary,
                                     ),
                                   ),
 
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Sign in to your account',
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 13, color: AppTheme.textSecondary,
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-                                // email
-                                _PremiumField(
-                                  controller: _emailController,
-                                  label: 'Email address',
-                                  icon: Icons.alternate_email_rounded,
-                                  keyboardType: TextInputType.emailAddress,
-                                  validator: (v) =>
-                                      v != null && v.contains('@') ? null : 'Enter valid email',
-                                ),
-                                const SizedBox(height: 16),
-                                // password
-                                _PremiumField(
-                                  controller: _passwordController,
-                                  label: 'Password',
-                                  icon: Icons.lock_outline_rounded,
-                                  obscureText: _obscurePassword,
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _obscurePassword
-                                          ? Icons.visibility_outlined
-                                          : Icons.visibility_off_outlined,
-                                      color: AppTheme.textSecondary, size: 20,
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Sign in to your account',
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 13,
+                                      color: AppTheme.textSecondary,
                                     ),
-                                    onPressed: () =>
-                                        setState(() => _obscurePassword = !_obscurePassword),
                                   ),
-                                  validator: (v) =>
-                                      v != null && v.length >= 6 ? null : 'Min 6 characters',
-                                  onFieldSubmitted: (_) => _login(),
+                                  const SizedBox(height: 24),
+                                  // email
+                                  _PremiumField(
+                                    controller: _emailController,
+                                    label: 'Email address',
+                                    icon: Icons.alternate_email_rounded,
+                                    keyboardType: TextInputType.emailAddress,
+                                    validator: (v) =>
+                                        v != null && v.contains('@')
+                                        ? null
+                                        : 'Enter valid email',
+                                  ),
+                                  const SizedBox(height: 16),
+                                  // password
+                                  _PremiumField(
+                                    controller: _passwordController,
+                                    label: 'Password',
+                                    icon: Icons.lock_outline_rounded,
+                                    obscureText: _obscurePassword,
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscurePassword
+                                            ? Icons.visibility_outlined
+                                            : Icons.visibility_off_outlined,
+                                        color: AppTheme.textSecondary,
+                                        size: 20,
+                                      ),
+                                      onPressed: () => setState(
+                                        () => _obscurePassword =
+                                            !_obscurePassword,
+                                      ),
+                                    ),
+                                    validator: (v) => v != null && v.length >= 6
+                                        ? null
+                                        : 'Min 6 characters',
+                                    onFieldSubmitted: (_) => _login(),
+                                  ),
+                                  const SizedBox(height: 28),
+                                  // sign in button
+                                  _GlowButton(
+                                    isLoading: auth.isLoading,
+                                    onPressed: _login,
+                                    label: 'Sign In',
+                                    gradient: AppTheme.primaryGradient,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: auth.isLoading
+                                          ? null
+                                          : _showQuickLogin,
+                                      icon: const Icon(
+                                        Icons.flash_on_outlined,
+                                        size: 17,
+                                      ),
+                                      label: const Text('Quick login'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            // ── register link ─────────────────
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "New driver? ",
+                                  style: GoogleFonts.outfit(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                                const SizedBox(height: 28),
-                                // sign in button
-                                _GlowButton(
-                                  isLoading: auth.isLoading,
-                                  onPressed: _login,
-                                  label: 'Sign In',
-                                  gradient: AppTheme.primaryGradient,
-                                ),
-                                const SizedBox(height: 12),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: OutlinedButton.icon(
-                                    onPressed: auth.isLoading ? null : _showDemoAccounts,
-                                    icon: const Icon(Icons.auto_awesome, size: 17),
-                                    label: const Text('Use demo account'),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: AppTheme.neonCyan,
-                                      side: const BorderSide(color: AppTheme.neonCyan),
-                                      padding: const EdgeInsets.symmetric(vertical: 13),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                GestureDetector(
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const RegisterScreen(),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Create account',
+                                    style: GoogleFonts.outfit(
+                                      color: AppTheme.primary,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          const SizedBox(height: 20),
-                          // ── register link ─────────────────
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                "New driver? ",
-                                style: GoogleFonts.outfit(
-                                  color: AppTheme.textSecondary, fontSize: 14,
+                            const SizedBox(height: 32),
+                            // ── location badge ────────────────
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.location_on_outlined,
+                                  size: 12,
+                                  color: AppTheme.textMuted,
                                 ),
-                              ),
-                              GestureDetector(
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const RegisterScreen(),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Create account',
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Kozhikode, Kerala',
                                   style: GoogleFonts.outfit(
-                                    color: AppTheme.primary, fontSize: 14,
-                                    fontWeight: FontWeight.w700,
+                                    fontSize: 11,
+                                    color: AppTheme.textMuted,
+                                    letterSpacing: 1.2,
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 32),
-                          // ── location badge ────────────────
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.location_on_outlined,
-                                  size: 12, color: AppTheme.textMuted),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Kozhikode, Kerala',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 11, color: AppTheme.textMuted,
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
 
-          // ── top-right server connection status & config ──────
-          Positioned(
-            top: 48,
-            right: 20,
-            child: GestureDetector(
-              onTap: () {
-                _checkServerHealth();
-                _showServerSettings();
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF131828).withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: _isCheckingHealth
-                        ? AppTheme.warning.withValues(alpha: 0.5)
-                        : (_isServerOnline
-                            ? AppTheme.primary.withValues(alpha: 0.4)
-                            : AppTheme.error.withValues(alpha: 0.7)),
-                    width: 1.2,
+            // ── top-right server connection status & config ──────
+            Positioned(
+              top: 48,
+              right: 20,
+              child: GestureDetector(
+                onTap: () {
+                  _checkServerHealth();
+                  _showServerSettings();
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (_isServerOnline ? AppTheme.primary : AppTheme.error)
-                          .withValues(alpha: 0.15),
-                      blurRadius: 8,
-                      spreadRadius: 1,
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: _isCheckingHealth
-                            ? AppTheme.warning
-                            : (_isServerOnline ? AppTheme.primary : AppTheme.error),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: (_isCheckingHealth
-                                    ? AppTheme.warning
-                                    : (_isServerOnline
-                                        ? AppTheme.primary
-                                        : AppTheme.error))
-                                .withValues(alpha: 0.7),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _isCheckingHealth
-                          ? 'Checking...'
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF131828).withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: _isCheckingHealth
+                          ? AppTheme.warning.withValues(alpha: 0.5)
                           : (_isServerOnline
-                              ? _currentServerUrl
-                                  .replaceFirst('http://', '')
-                                  .replaceFirst('https://', '')
-                              : 'Offline (Tap)'),
-                      style: GoogleFonts.jetBrainsMono(
-                        fontSize: 10,
+                                ? AppTheme.primary.withValues(alpha: 0.4)
+                                : AppTheme.error.withValues(alpha: 0.7)),
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color:
+                            (_isServerOnline
+                                    ? AppTheme.primary
+                                    : AppTheme.error)
+                                .withValues(alpha: 0.15),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: _isCheckingHealth
+                              ? AppTheme.warning
+                              : (_isServerOnline
+                                    ? AppTheme.primary
+                                    : AppTheme.error),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  (_isCheckingHealth
+                                          ? AppTheme.warning
+                                          : (_isServerOnline
+                                                ? AppTheme.primary
+                                                : AppTheme.error))
+                                      .withValues(alpha: 0.7),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _isCheckingHealth
+                            ? 'Checking...'
+                            : (_isServerOnline
+                                  ? _currentServerUrl
+                                        .replaceFirst('http://', '')
+                                        .replaceFirst('https://', '')
+                                  : 'Offline (Tap)'),
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 10,
+                          color: _isServerOnline
+                              ? AppTheme.textSecondary
+                              : AppTheme.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        _isServerOnline
+                            ? Icons.tune_rounded
+                            : Icons.refresh_rounded,
+                        size: 12,
                         color: _isServerOnline
                             ? AppTheme.textSecondary
                             : AppTheme.error,
-                        fontWeight: FontWeight.w600,
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      _isServerOnline ? Icons.tune_rounded : Icons.refresh_rounded,
-                      size: 12,
-                      color: _isServerOnline
-                          ? AppTheme.textSecondary
-                          : AppTheme.error,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-      ),  // Scaffold
-    );   // Theme
-
+          ],
+        ),
+      ), // Scaffold
+    ); // Theme
   }
 }
-
 
 // ── Background animated orbs ──────────────────────────────────────────────────
 class _BackgroundOrbs extends StatelessWidget {
@@ -678,13 +800,15 @@ class _BackgroundOrbs extends StatelessWidget {
         ),
         // top-right orb
         Positioned(
-          top: -60, right: -60,
+          top: -60,
+          right: -60,
           child: AnimatedBuilder(
             animation: pulseAnim,
             builder: (_, __) => Transform.scale(
               scale: pulseAnim.value,
               child: Container(
-                width: 260, height: 260,
+                width: 260,
+                height: 260,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
@@ -700,13 +824,15 @@ class _BackgroundOrbs extends StatelessWidget {
         ),
         // bottom-left orb
         Positioned(
-          bottom: -80, left: -80,
+          bottom: -80,
+          left: -80,
           child: AnimatedBuilder(
             animation: pulseAnim,
             builder: (_, __) => Transform.scale(
               scale: 2.0 - pulseAnim.value,
               child: Container(
-                width: 300, height: 300,
+                width: 300,
+                height: 300,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
@@ -745,7 +871,8 @@ class _LogoBadge extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: AppTheme.primary.withOpacity(0.4 * pulseAnim.value),
-              blurRadius: 32, spreadRadius: 4,
+              blurRadius: 32,
+              spreadRadius: 4,
             ),
           ],
         ),
@@ -827,7 +954,9 @@ class _GlowButton extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: AppTheme.primary.withOpacity(0.4),
-            blurRadius: 20, spreadRadius: -4, offset: const Offset(0, 6),
+            blurRadius: 20,
+            spreadRadius: -4,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -837,20 +966,25 @@ class _GlowButton extends StatelessWidget {
           onTap: isLoading ? null : onPressed,
           borderRadius: BorderRadius.circular(14),
           child: SizedBox(
-            width: double.infinity, height: 52,
+            width: double.infinity,
+            height: 52,
             child: Center(
               child: isLoading
                   ? const SizedBox(
-                      width: 22, height: 22,
+                      width: 22,
+                      height: 22,
                       child: CircularProgressIndicator(
-                        strokeWidth: 2.5, color: Color(0xFF0A0D14),
+                        strokeWidth: 2.5,
+                        color: Color(0xFF0A0D14),
                       ),
                     )
                   : Text(
                       label,
                       style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.w700, fontSize: 16,
-                        color: const Color(0xFF0A0D14), letterSpacing: 0.3,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        color: const Color(0xFF0A0D14),
+                        letterSpacing: 0.3,
                       ),
                     ),
             ),

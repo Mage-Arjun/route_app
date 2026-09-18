@@ -43,39 +43,43 @@ class _TripScreenState extends ConsumerState<TripScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadTrip();
-    _startGpsTracking();
   }
 
-  Future<void> _startGpsTracking() async {
+  Future<void> _startGpsTracking(int? vehicleId) async {
+    if (vehicleId == null) return;
     final granted = await LocationService.requestPermissions();
     if (!granted) return;
 
     final api = ref.read(apiServiceProvider);
     _locationService = LocationService(api);
-    _locationService!.start(tripId: widget.tripId, pushIntervalSecs: 8);
+    _locationService!.start(
+      tripId: widget.tripId,
+      vehicleId: vehicleId,
+      pushIntervalSecs: 8,
+    );
 
     const settings = LocationSettings(
       accuracy: LocationAccuracy.bestForNavigation,
       distanceFilter: 3, // Capture every 3m moved
     );
 
-    _positionSub = Geolocator.getPositionStream(locationSettings: settings).listen(
-      (pos) {
-        if (mounted) {
-          setState(() {
-            final pt = LatLng(pos.latitude, pos.longitude);
-            _currentPosition = pt;
-            _currentAccuracy = pos.accuracy;
-            _livePathPoints.add(pt);
-          });
-        }
-      },
-      onError: (_) {},
-    );
+    _positionSub = Geolocator.getPositionStream(locationSettings: settings)
+        .listen((pos) {
+          if (mounted) {
+            setState(() {
+              final pt = LatLng(pos.latitude, pos.longitude);
+              _currentPosition = pt;
+              _currentAccuracy = pos.accuracy;
+              _livePathPoints.add(pt);
+            });
+          }
+        }, onError: (_) {});
 
     try {
       final initPos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
       if (mounted) {
         setState(() {
@@ -95,14 +99,16 @@ class _TripScreenState extends ConsumerState<TripScreen>
     super.dispose();
   }
 
-
   Future<void> _loadTrip() async {
     try {
       final api = ref.read(apiServiceProvider);
       final trip = await api.getTrip(widget.tripId);
       if (mounted) {
-        setState(() { _trip = trip; _loading = false; });
-        _locationService?.setVehicleId(trip.vehicleId);
+        setState(() {
+          _trip = trip;
+          _loading = false;
+        });
+        await _startGpsTracking(trip.vehicleId);
       }
     } catch (e) {
       if (mounted) setState(() => _loading = false);
@@ -112,7 +118,9 @@ class _TripScreenState extends ConsumerState<TripScreen>
   /// Navigate to stop via Google Maps / Apple Maps
   Future<void> _navigateTo(double lat, double lng, String name) async {
     final encoded = Uri.encodeComponent(name);
-    final url = Uri.parse('https://maps.google.com/maps?daddr=$lat,$lng&q=$encoded');
+    final url = Uri.parse(
+      'https://maps.google.com/maps?daddr=$lat,$lng&q=$encoded',
+    );
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
@@ -154,8 +162,14 @@ class _TripScreenState extends ConsumerState<TripScreen>
         title: const Text('Complete Trip?'),
         content: const Text('Mark this trip as completed and return to depot?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Complete')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Complete'),
+          ),
         ],
       ),
     );
@@ -205,7 +219,9 @@ class _TripScreenState extends ConsumerState<TripScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not acquire GPS fix. Please ensure location is enabled.'),
+            content: Text(
+              'Could not acquire GPS fix. Please ensure location is enabled.',
+            ),
             backgroundColor: AppTheme.error,
           ),
         );
@@ -218,7 +234,9 @@ class _TripScreenState extends ConsumerState<TripScreen>
     final accuracy = pos.accuracy;
 
     final nameCtrl = TextEditingController();
-    final addressCtrl = TextEditingController(text: 'Lat: ${lat.toStringAsFixed(5)}, Lng: ${lng.toStringAsFixed(5)}');
+    final addressCtrl = TextEditingController(
+      text: 'Lat: ${lat.toStringAsFixed(5)}, Lng: ${lng.toStringAsFixed(5)}',
+    );
     final notesCtrl = TextEditingController();
     bool isSaving = false;
 
@@ -230,7 +248,9 @@ class _TripScreenState extends ConsumerState<TripScreen>
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) => Container(
           padding: EdgeInsets.only(
-            left: 24, right: 24, top: 24,
+            left: 24,
+            right: 24,
+            top: 24,
             bottom: MediaQuery.of(context).viewInsets.bottom + 24,
           ),
           decoration: BoxDecoration(
@@ -247,7 +267,11 @@ class _TripScreenState extends ConsumerState<TripScreen>
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.add_location_alt_rounded, color: AppTheme.primary, size: 24),
+                      const Icon(
+                        Icons.add_location_alt_rounded,
+                        color: AppTheme.primary,
+                        size: 24,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Record Stop at Current GPS',
@@ -260,7 +284,11 @@ class _TripScreenState extends ConsumerState<TripScreen>
                     ],
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: AppTheme.textSecondary, size: 20),
+                    icon: const Icon(
+                      Icons.close,
+                      color: AppTheme.textSecondary,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -268,15 +296,24 @@ class _TripScreenState extends ConsumerState<TripScreen>
               const SizedBox(height: 8),
               // Live GPS Coordinates indicator
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AppTheme.primary.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.gps_fixed, size: 16, color: AppTheme.primary),
+                    const Icon(
+                      Icons.gps_fixed,
+                      size: 16,
+                      color: AppTheme.primary,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -289,12 +326,22 @@ class _TripScreenState extends ConsumerState<TripScreen>
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: AppTheme.primary,
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: const Text('GPS ACCURATE', style: TextStyle(color: Color(0xFF0A0D14), fontSize: 9, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'GPS ACCURATE',
+                        style: TextStyle(
+                          color: Color(0xFF0A0D14),
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -308,10 +355,21 @@ class _TripScreenState extends ConsumerState<TripScreen>
                   labelText: 'Stop / Customer Name (e.g. Kozhikode Store)',
                   labelStyle: GoogleFonts.outfit(color: AppTheme.textSecondary),
                   filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.border)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.border)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primary)),
+                  fillColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.primary),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -322,10 +380,21 @@ class _TripScreenState extends ConsumerState<TripScreen>
                   labelText: 'Address / Landmark',
                   labelStyle: GoogleFonts.outfit(color: AppTheme.textSecondary),
                   filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.border)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.border)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primary)),
+                  fillColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.primary),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -336,10 +405,21 @@ class _TripScreenState extends ConsumerState<TripScreen>
                   labelText: 'Delivery Notes (Optional)',
                   labelStyle: GoogleFonts.outfit(color: AppTheme.textSecondary),
                   filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.border)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.border)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primary)),
+                  fillColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.primary),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -350,52 +430,76 @@ class _TripScreenState extends ConsumerState<TripScreen>
                     backgroundColor: AppTheme.primary,
                     foregroundColor: const Color(0xFF0A0D14),
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  onPressed: isSaving ? null : () async {
-                    final name = nameCtrl.text.trim();
-                    if (name.isEmpty) return;
-                    setModalState(() => isSaving = true);
-                    try {
-                      final api = ref.read(apiServiceProvider);
-                      await api.quickAddStop(_trip!.routeId, {
-                        'name': name,
-                        'latitude': lat,
-                        'longitude': lng,
-                        'address': addressCtrl.text.trim(),
-                        'notes': notesCtrl.text.trim(),
-                      });
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        HapticFeedback.mediumImpact();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              '📍 Stop "$name" added! Route sequence updated.',
-                              style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold),
-                            ),
-                            backgroundColor: AppTheme.primary,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        );
-                        await _loadTrip();
-                      }
-                    } catch (e) {
-                      setModalState(() => isSaving = false);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Failed to add stop: $e'), backgroundColor: AppTheme.error),
-                        );
-                      }
-                    }
-                  },
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                          final name = nameCtrl.text.trim();
+                          if (name.isEmpty) return;
+                          setModalState(() => isSaving = true);
+                          try {
+                            final api = ref.read(apiServiceProvider);
+                            await api.quickAddStop(_trip!.routeId, {
+                              'name': name,
+                              'latitude': lat,
+                              'longitude': lng,
+                              'address': addressCtrl.text.trim(),
+                              'notes': notesCtrl.text.trim(),
+                            });
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              HapticFeedback.mediumImpact();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    '📍 Stop "$name" added! Route sequence updated.',
+                                    style: GoogleFonts.outfit(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  backgroundColor: AppTheme.primary,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              );
+                              await _loadTrip();
+                            }
+                          } catch (e) {
+                            setModalState(() => isSaving = false);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to add stop: $e'),
+                                  backgroundColor: AppTheme.error,
+                                ),
+                              );
+                            }
+                          }
+                        },
                   icon: isSaving
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0A0D14)))
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFF0A0D14),
+                          ),
+                        )
                       : const Icon(Icons.check_circle_outline, size: 20),
                   label: Text(
-                    isSaving ? 'Inserting & Re-sequencing...' : 'Save & Auto-Insert Stop',
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 15),
+                    isSaving
+                        ? 'Inserting & Re-sequencing...'
+                        : 'Save & Auto-Insert Stop',
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
               ),
@@ -422,7 +526,8 @@ class _TripScreenState extends ConsumerState<TripScreen>
       );
     }
 
-    final stops = [...trip.tripStops]..sort((a, b) => a.sequence.compareTo(b.sequence));
+    final stops = [...trip.tripStops]
+      ..sort((a, b) => a.sequence.compareTo(b.sequence));
     final completedCount = stops.where((s) => s.isDone).length;
     final totalCount = stops.length;
     final nextStop = stops.where((s) => !s.isDone).firstOrNull;
@@ -435,7 +540,10 @@ class _TripScreenState extends ConsumerState<TripScreen>
               foregroundColor: const Color(0xFF0A0D14),
               onPressed: _addStopAtCurrentLocation,
               icon: const Icon(Icons.add_location_alt_rounded),
-              label: Text('Record Stop Here', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+              label: Text(
+                'Record Stop Here',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w700),
+              ),
             )
           : null,
       appBar: AppBar(
@@ -463,7 +571,10 @@ class _TripScreenState extends ConsumerState<TripScreen>
             },
             itemBuilder: (_) => [
               if (trip.status == 'active')
-                const PopupMenuItem(value: 'cancel', child: Text('Cancel Trip')),
+                const PopupMenuItem(
+                  value: 'cancel',
+                  child: Text('Cancel Trip'),
+                ),
             ],
           ),
         ],
@@ -485,16 +596,24 @@ class _TripScreenState extends ConsumerState<TripScreen>
     );
   }
 
-
   Widget _buildProgressHeader(
-
-    List<TripStop> stops, int completed, int total, TripStop? nextStop) {
+    List<TripStop> stops,
+    int completed,
+    int total,
+    TripStop? nextStop,
+  ) {
     final rate = total > 0 ? completed / total : 0.0;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -504,25 +623,40 @@ class _TripScreenState extends ConsumerState<TripScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('$completed of $total stops done',
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    Text(
+                      '$completed of $total stops done',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
                     if (nextStop != null)
                       Text(
                         'Next: ${nextStop.customer?.name ?? 'Stop ${nextStop.sequence}'}',
-                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12,
+                        ),
                       ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: rate >= 1.0 ? AppTheme.success : AppTheme.primary,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   '${(rate * 100).toStringAsFixed(0)}%',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ],
@@ -533,9 +667,15 @@ class _TripScreenState extends ConsumerState<TripScreen>
             child: LinearProgressIndicator(
               value: rate,
               minHeight: 10,
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest,
               valueColor: AlwaysStoppedAnimation<Color>(
-                rate >= 1.0 ? AppTheme.success : rate > 0.5 ? AppTheme.warning : AppTheme.primary,
+                rate >= 1.0
+                    ? AppTheme.success
+                    : rate > 0.5
+                    ? AppTheme.warning
+                    : AppTheme.primary,
               ),
             ),
           ),
@@ -559,7 +699,10 @@ class _TripScreenState extends ConsumerState<TripScreen>
             onTap: stop.isDone ? null : () => _showPodModal(stop),
             onNavigate: stop.customer != null
                 ? () => _navigateTo(
-                    stop.customer!.latitude, stop.customer!.longitude, stop.customer!.name)
+                    stop.customer!.latitude,
+                    stop.customer!.longitude,
+                    stop.customer!.name,
+                  )
                 : null,
           );
         },
@@ -578,14 +721,17 @@ class _TripScreenState extends ConsumerState<TripScreen>
       }
     }
 
-    final LatLng center = _currentPosition ??
+    final LatLng center =
+        _currentPosition ??
         (mapPoints.isNotEmpty
             ? (mapPoints.length == 1
-                ? mapPoints.first
-                : mapPoints.reduce((a, b) => LatLng(
-                    (a.latitude + b.latitude) / 2,
-                    (a.longitude + b.longitude) / 2,
-                  )))
+                  ? mapPoints.first
+                  : mapPoints.reduce(
+                      (a, b) => LatLng(
+                        (a.latitude + b.latitude) / 2,
+                        (a.longitude + b.longitude) / 2,
+                      ),
+                    ))
             : const LatLng(11.2588, 75.7804)); // Kozhikode default
 
     return Stack(
@@ -598,20 +744,22 @@ class _TripScreenState extends ConsumerState<TripScreen>
               userAgentPackageName: 'com.routeapp.production',
             ),
             // Progressive live path drawn as vehicle moves
-            PolylineLayer(polylines: [
-              if (_livePathPoints.length > 1)
-                Polyline(
-                  points: _livePathPoints,
-                  color: AppTheme.neonCyan,
-                  strokeWidth: 4.5,
-                ),
-              if (mapPoints.length > 1)
-                Polyline(
-                  points: mapPoints,
-                  color: AppTheme.primary.withValues(alpha: 0.6),
-                  strokeWidth: 2.5,
-                ),
-            ]),
+            PolylineLayer(
+              polylines: [
+                if (_livePathPoints.length > 1)
+                  Polyline(
+                    points: _livePathPoints,
+                    color: AppTheme.neonCyan,
+                    strokeWidth: 4.5,
+                  ),
+                if (mapPoints.length > 1)
+                  Polyline(
+                    points: mapPoints,
+                    color: AppTheme.primary.withValues(alpha: 0.6),
+                    strokeWidth: 2.5,
+                  ),
+              ],
+            ),
             MarkerLayer(
               markers: [
                 // Live Vehicle Marker
@@ -634,7 +782,11 @@ class _TripScreenState extends ConsumerState<TripScreen>
                         ],
                       ),
                       child: const Center(
-                        child: Icon(Icons.navigation_rounded, color: AppTheme.neonCyan, size: 22),
+                        child: Icon(
+                          Icons.navigation_rounded,
+                          color: AppTheme.neonCyan,
+                          size: 22,
+                        ),
                       ),
                     ),
                   ),
@@ -648,7 +800,11 @@ class _TripScreenState extends ConsumerState<TripScreen>
                     child: const CircleAvatar(
                       radius: 16,
                       backgroundColor: Colors.grey,
-                      child: Icon(Icons.warehouse, size: 16, color: Colors.white),
+                      child: Icon(
+                        Icons.warehouse,
+                        size: 16,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
 
@@ -656,17 +812,26 @@ class _TripScreenState extends ConsumerState<TripScreen>
                 for (int i = 0; i < stops.length; i++)
                   if (stops[i].customer != null)
                     Marker(
-                      point: LatLng(stops[i].customer!.latitude, stops[i].customer!.longitude),
+                      point: LatLng(
+                        stops[i].customer!.latitude,
+                        stops[i].customer!.longitude,
+                      ),
                       width: 34,
                       height: 34,
                       child: GestureDetector(
-                        onTap: stops[i].isDone ? null : () => _showPodModal(stops[i]),
+                        onTap: stops[i].isDone
+                            ? null
+                            : () => _showPodModal(stops[i]),
                         child: CircleAvatar(
                           radius: 15,
                           backgroundColor: _statusColor(stops[i].status),
                           child: Text(
                             '${stops[i].sequence}',
-                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
@@ -684,7 +849,9 @@ class _TripScreenState extends ConsumerState<TripScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.92),
+                color: Theme.of(
+                  context,
+                ).colorScheme.surface.withValues(alpha: 0.92),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: AppTheme.border),
               ),
@@ -716,16 +883,22 @@ class _TripScreenState extends ConsumerState<TripScreen>
     );
   }
 
-
   Color _statusColor(String status) {
     switch (status) {
-      case 'completed': return AppTheme.success;
-      case 'skipped': return AppTheme.warning;
-      case 'refused': return AppTheme.error;
-      case 'closed': return Colors.grey;
-      case 'partial': return Colors.orange;
-      case 'rescheduled': return Colors.purple;
-      default: return AppTheme.info;
+      case 'completed':
+        return AppTheme.success;
+      case 'skipped':
+        return AppTheme.warning;
+      case 'refused':
+        return AppTheme.error;
+      case 'closed':
+        return Colors.grey;
+      case 'partial':
+        return Colors.orange;
+      case 'rescheduled':
+        return Colors.purple;
+      default:
+        return AppTheme.info;
     }
   }
 
@@ -736,7 +909,10 @@ class _TripScreenState extends ConsumerState<TripScreen>
         title: const Text('Cancel Trip?'),
         content: const Text('Are you sure you want to cancel this trip?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('No'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),
             onPressed: () => Navigator.pop(ctx, true),
@@ -759,7 +935,6 @@ class _TripScreenState extends ConsumerState<TripScreen>
     }
   }
 }
-
 
 // ────────────────────────────────────────────────────────────────────────────
 // Stop Card Widget
@@ -788,7 +963,9 @@ class _StopCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 5),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: isCurrent ? BorderSide(color: AppTheme.primary, width: 2) : BorderSide.none,
+        side: isCurrent
+            ? BorderSide(color: AppTheme.primary, width: 2)
+            : BorderSide.none,
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -799,7 +976,8 @@ class _StopCard extends StatelessWidget {
             children: [
               // Sequence badge
               Container(
-                width: 36, height: 36,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: stop.isDone ? color.withOpacity(0.15) : color,
                   shape: BoxShape.circle,
@@ -828,7 +1006,9 @@ class _StopCard extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
-                        decoration: stop.isCompleted ? TextDecoration.lineThrough : null,
+                        decoration: stop.isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                     ),
                     if (customer?.address != null)
@@ -836,7 +1016,10 @@ class _StopCard extends StatelessWidget {
                         customer!.address!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12,
+                        ),
                       ),
                     if (stop.receiverName != null)
                       Text(
@@ -858,25 +1041,43 @@ class _StopCard extends StatelessWidget {
                   if (!stop.isDone && onNavigate != null)
                     IconButton(
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                      icon: const Icon(Icons.navigation, color: AppTheme.info, size: 20),
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                      icon: const Icon(
+                        Icons.navigation,
+                        color: AppTheme.info,
+                        size: 20,
+                      ),
                       tooltip: 'Navigate',
                       onPressed: onNavigate,
                     ),
                   if (!stop.isDone && onTap != null)
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         minimumSize: Size.zero,
                         backgroundColor: AppTheme.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       onPressed: onTap,
-                      child: const Text('Deliver', style: TextStyle(fontSize: 12)),
+                      child: const Text(
+                        'Deliver',
+                        style: TextStyle(fontSize: 12),
+                      ),
                     )
                   else
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: color.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -884,7 +1085,11 @@ class _StopCard extends StatelessWidget {
                       ),
                       child: Text(
                         stop.status.toUpperCase(),
-                        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          color: color,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                 ],
@@ -898,29 +1103,42 @@ class _StopCard extends StatelessWidget {
 
   Color _statusColor(String status) {
     switch (status) {
-      case 'completed': return AppTheme.success;
-      case 'skipped': return AppTheme.warning;
-      case 'refused': return AppTheme.error;
-      case 'closed': return Colors.grey;
-      case 'partial': return Colors.orange;
-      case 'rescheduled': return Colors.purple;
-      default: return AppTheme.info;
+      case 'completed':
+        return AppTheme.success;
+      case 'skipped':
+        return AppTheme.warning;
+      case 'refused':
+        return AppTheme.error;
+      case 'closed':
+        return Colors.grey;
+      case 'partial':
+        return Colors.orange;
+      case 'rescheduled':
+        return Colors.purple;
+      default:
+        return AppTheme.info;
     }
   }
 
   IconData _statusIcon(String status) {
     switch (status) {
-      case 'completed': return Icons.check;
-      case 'skipped': return Icons.skip_next;
-      case 'refused': return Icons.block;
-      case 'closed': return Icons.lock;
-      case 'partial': return Icons.pie_chart;
-      case 'rescheduled': return Icons.event_repeat;
-      default: return Icons.radio_button_unchecked;
+      case 'completed':
+        return Icons.check;
+      case 'skipped':
+        return Icons.skip_next;
+      case 'refused':
+        return Icons.block;
+      case 'closed':
+        return Icons.lock;
+      case 'partial':
+        return Icons.pie_chart;
+      case 'rescheduled':
+        return Icons.event_repeat;
+      default:
+        return Icons.radio_button_unchecked;
     }
   }
 }
-
 
 // ────────────────────────────────────────────────────────────────────────────
 // Proof-of-Delivery Bottom Sheet
@@ -992,8 +1210,12 @@ class _PodBottomSheetState extends ConsumerState<_PodBottomSheet> {
 
   Future<void> _captureSignature() async {
     try {
-      final imageData = await _signatureKey.currentState!.toImage(pixelRatio: 2.0);
-      final byteData = await imageData.toByteData(format: ui.ImageByteFormat.png);
+      final imageData = await _signatureKey.currentState!.toImage(
+        pixelRatio: 2.0,
+      );
+      final byteData = await imageData.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
       if (byteData != null) {
         final bytes = byteData.buffer.asUint8List();
         setState(() => _signatureBase64 = base64Encode(bytes));
@@ -1003,20 +1225,27 @@ class _PodBottomSheetState extends ConsumerState<_PodBottomSheet> {
     }
   }
 
-  bool get _requiresRecipient => _selectedStatus == 'completed' || _selectedStatus == 'partial';
+  bool get _requiresRecipient =>
+      _selectedStatus == 'completed' || _selectedStatus == 'partial';
   bool get _requiresReason =>
       _selectedStatus != 'completed' && _selectedStatus != 'partial';
 
   Future<void> _submit() async {
     if (_requiresRecipient && _receiverController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter the receiver\'s name'), backgroundColor: AppTheme.warning),
+        const SnackBar(
+          content: Text('Please enter the receiver\'s name'),
+          backgroundColor: AppTheme.warning,
+        ),
       );
       return;
     }
     if (_requiresReason && _failureReason == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a reason'), backgroundColor: AppTheme.warning),
+        const SnackBar(
+          content: Text('Please select a reason'),
+          backgroundColor: AppTheme.warning,
+        ),
       );
       return;
     }
@@ -1031,14 +1260,23 @@ class _PodBottomSheetState extends ConsumerState<_PodBottomSheet> {
 
       final receiver = _receiverController.text.trim();
       if (_selectedStatus == 'completed' || _selectedStatus == 'partial') {
-        await api.uploadPod(widget.tripId, widget.stop.id, receiverName: receiver,
-          notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-          signatureData: _signatureBase64, imageFile: _photoFile);
+        await api.uploadPod(
+          widget.tripId,
+          widget.stop.id,
+          receiverName: receiver,
+          notes: _notesController.text.trim().isEmpty
+              ? null
+              : _notesController.text.trim(),
+          signatureData: _signatureBase64,
+          imageFile: _photoFile,
+        );
       } else {
         await api.updateTripStop(widget.tripId, widget.stop.id, {
           'action': _selectedStatus == 'skipped' ? 'skip' : 'fail',
           'failure_reason': _failureReason,
-          'driver_notes': _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+          'driver_notes': _notesController.text.trim().isEmpty
+              ? null
+              : _notesController.text.trim(),
         });
       }
 
@@ -1072,7 +1310,8 @@ class _PodBottomSheetState extends ConsumerState<_PodBottomSheet> {
             Center(
               child: Container(
                 margin: const EdgeInsets.only(top: 10),
-                width: 40, height: 4,
+                width: 40,
+                height: 4,
                 decoration: BoxDecoration(
                   color: Theme.of(ctx).colorScheme.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
@@ -1090,23 +1329,38 @@ class _PodBottomSheetState extends ConsumerState<_PodBottomSheet> {
                       children: [
                         Text(
                           customer?.name ?? 'Stop ${widget.stop.sequence}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 17,
+                          ),
                         ),
                         if (customer?.address != null)
-                          Text(customer!.address!,
-                              style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+                          Text(
+                            customer!.address!,
+                            style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 13,
+                            ),
+                          ),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: AppTheme.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       'Stop #${widget.stop.sequence}',
-                      style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w700, fontSize: 13),
+                      style: TextStyle(
+                        color: AppTheme.primary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ],
@@ -1133,22 +1387,49 @@ class _PodBottomSheetState extends ConsumerState<_PodBottomSheet> {
                         }),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
-                            color: selected ? color.withOpacity(0.15) : Theme.of(ctx).colorScheme.surfaceContainerHighest,
-                            border: Border.all(color: selected ? color : Theme.of(ctx).colorScheme.outlineVariant, width: selected ? 2 : 1),
+                            color: selected
+                                ? color.withOpacity(0.15)
+                                : Theme.of(
+                                    ctx,
+                                  ).colorScheme.surfaceContainerHighest,
+                            border: Border.all(
+                              color: selected
+                                  ? color
+                                  : Theme.of(ctx).colorScheme.outlineVariant,
+                              width: selected ? 2 : 1,
+                            ),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(icon, size: 16, color: selected ? color : Theme.of(ctx).colorScheme.onSurfaceVariant),
+                              Icon(
+                                icon,
+                                size: 16,
+                                color: selected
+                                    ? color
+                                    : Theme.of(
+                                        ctx,
+                                      ).colorScheme.onSurfaceVariant,
+                              ),
                               const SizedBox(width: 6),
-                              Text(label, style: TextStyle(
-                                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                                color: selected ? color : AppTheme.textSecondary,
-                                fontSize: 13,
-                              )),
+                              Text(
+                                label,
+                                style: TextStyle(
+                                  fontWeight: selected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: selected
+                                      ? color
+                                      : AppTheme.textSecondary,
+                                  fontSize: 13,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -1166,7 +1447,9 @@ class _PodBottomSheetState extends ConsumerState<_PodBottomSheet> {
                       hint: const Text('Select reason'),
                       decoration: const InputDecoration(),
                       items: _failureReasons
-                          .map((r) => DropdownMenuItem(value: r, child: Text(r)))
+                          .map(
+                            (r) => DropdownMenuItem(value: r, child: Text(r)),
+                          )
                           .toList(),
                       onChanged: (v) => setState(() => _failureReason = v),
                     ),
@@ -1175,9 +1458,11 @@ class _PodBottomSheetState extends ConsumerState<_PodBottomSheet> {
 
                   // ─ Receiver Name ─
                   if (_requiresRecipient) ...[
-                    _sectionTitle(_selectedStatus == 'completed'
-                        ? 'Receiver Name *'
-                        : 'Partial Receiver Name'),
+                    _sectionTitle(
+                      _selectedStatus == 'completed'
+                          ? 'Receiver Name *'
+                          : 'Partial Receiver Name',
+                    ),
                     TextFormField(
                       controller: _receiverController,
                       textCapitalization: TextCapitalization.words,
@@ -1196,16 +1481,29 @@ class _PodBottomSheetState extends ConsumerState<_PodBottomSheet> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: Image.file(_photoFile!, height: 160, width: double.infinity, fit: BoxFit.cover),
+                          child: Image.file(
+                            _photoFile!,
+                            height: 160,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                         Positioned(
-                          top: 8, right: 8,
+                          top: 8,
+                          right: 8,
                           child: GestureDetector(
                             onTap: () => setState(() => _photoFile = null),
                             child: Container(
                               padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                              child: const Icon(Icons.close, color: Colors.white, size: 16),
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 16,
+                              ),
                             ),
                           ),
                         ),
@@ -1217,16 +1515,33 @@ class _PodBottomSheetState extends ConsumerState<_PodBottomSheet> {
                       child: Container(
                         height: 100,
                         decoration: BoxDecoration(
-                          color: Theme.of(ctx).colorScheme.surfaceContainerHighest,
-                          border: Border.all(color: Theme.of(ctx).colorScheme.outlineVariant, style: BorderStyle.solid),
+                          color: Theme.of(
+                            ctx,
+                          ).colorScheme.surfaceContainerHighest,
+                          border: Border.all(
+                            color: Theme.of(ctx).colorScheme.outlineVariant,
+                            style: BorderStyle.solid,
+                          ),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.camera_alt, size: 32, color: Theme.of(ctx).colorScheme.onSurfaceVariant),
+                            Icon(
+                              Icons.camera_alt,
+                              size: 32,
+                              color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                            ),
                             const SizedBox(height: 6),
-                            Text('Tap to take photo', style: TextStyle(color: Theme.of(ctx).colorScheme.onSurfaceVariant, fontSize: 13)),
+                            Text(
+                              'Tap to take photo',
+                              style: TextStyle(
+                                color: Theme.of(
+                                  ctx,
+                                ).colorScheme.onSurfaceVariant,
+                                fontSize: 13,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -1243,16 +1558,23 @@ class _PodBottomSheetState extends ConsumerState<_PodBottomSheet> {
                         TextButton.icon(
                           onPressed: () => _signatureKey.currentState?.clear(),
                           icon: const Icon(Icons.refresh, size: 16),
-                          label: const Text('Clear', style: TextStyle(fontSize: 12)),
+                          label: const Text(
+                            'Clear',
+                            style: TextStyle(fontSize: 12),
+                          ),
                         ),
                       ],
                     ),
                     Container(
                       height: 140,
                       decoration: BoxDecoration(
-                        border: Border.all(color: Theme.of(ctx).colorScheme.outlineVariant),
+                        border: Border.all(
+                          color: Theme.of(ctx).colorScheme.outlineVariant,
+                        ),
                         borderRadius: BorderRadius.circular(10),
-                        color: Theme.of(ctx).colorScheme.surfaceContainerHighest,
+                        color: Theme.of(
+                          ctx,
+                        ).colorScheme.surfaceContainerHighest,
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(10),
@@ -1261,7 +1583,9 @@ class _PodBottomSheetState extends ConsumerState<_PodBottomSheet> {
                           minimumStrokeWidth: 2.0,
                           maximumStrokeWidth: 4.0,
                           strokeColor: Theme.of(ctx).colorScheme.onSurface,
-                          backgroundColor: Theme.of(ctx).colorScheme.surfaceContainerHighest,
+                          backgroundColor: Theme.of(
+                            ctx,
+                          ).colorScheme.surfaceContainerHighest,
                         ),
                       ),
                     ),
@@ -1288,14 +1612,23 @@ class _PodBottomSheetState extends ConsumerState<_PodBottomSheet> {
                       onPressed: _submitting ? null : _submit,
                       icon: _submitting
                           ? const SizedBox(
-                              width: 18, height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
                           : const Icon(Icons.check_circle),
-                      label: Text(_submitting ? 'Submitting...' : 'Submit Delivery'),
+                      label: Text(
+                        _submitting ? 'Submitting...' : 'Submit Delivery',
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _statusOptions
-                            .firstWhere((o) => o.$1 == _selectedStatus,
-                                orElse: () => _statusOptions.first)
+                            .firstWhere(
+                              (o) => o.$1 == _selectedStatus,
+                              orElse: () => _statusOptions.first,
+                            )
                             .$4,
                       ),
                     ),
@@ -1312,8 +1645,14 @@ class _PodBottomSheetState extends ConsumerState<_PodBottomSheet> {
   Widget _sectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Text(title,
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.textPrimary)),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: 13,
+          color: AppTheme.textPrimary,
+        ),
+      ),
     );
   }
 }

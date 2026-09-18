@@ -45,7 +45,12 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
       final api = ref.read(apiServiceProvider);
       final routes = await api.getRoutes();
       final trips = await api.getTrips(status: 'active');
-      if (mounted) setState(() { _routes = routes; _activeTrips = trips; _loading = false; });
+      if (mounted)
+        setState(() {
+          _routes = routes;
+          _activeTrips = trips;
+          _loading = false;
+        });
     } catch (e) {
       if (mounted) setState(() => _loading = false);
     }
@@ -57,13 +62,19 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
       // open a blank trip screen after the trip has been closed elsewhere.
       await ref.read(apiServiceProvider).getTrip(tripId);
       if (!mounted) return;
-      await Navigator.push(context, MaterialPageRoute(builder: (_) => TripScreen(tripId: tripId)));
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => TripScreen(tripId: tripId)),
+      );
       if (mounted) _loadData();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Unable to open trip: $e'), backgroundColor: AppTheme.error,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unable to open trip: $e'),
+          backgroundColor: AppTheme.error,
+        ),
+      );
     }
   }
 
@@ -80,7 +91,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) => Container(
           padding: EdgeInsets.only(
-            left: 24, right: 24, top: 24,
+            left: 24,
+            right: 24,
+            top: 24,
             bottom: MediaQuery.of(context).viewInsets.bottom + 24,
           ),
           decoration: BoxDecoration(
@@ -97,7 +110,11 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.add_road_rounded, color: AppTheme.primary, size: 22),
+                      const Icon(
+                        Icons.add_road_rounded,
+                        color: AppTheme.primary,
+                        size: 22,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Start First Trip / New Route',
@@ -110,7 +127,11 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                     ],
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: AppTheme.textSecondary, size: 20),
+                    icon: const Icon(
+                      Icons.close,
+                      color: AppTheme.textSecondary,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -118,7 +139,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
               const SizedBox(height: 4),
               Text(
                 'Create a route and activate GPS to draw the path and add stops as you drive.',
-                style: GoogleFonts.outfit(color: AppTheme.textSecondary, fontSize: 13),
+                style: GoogleFonts.outfit(
+                  color: AppTheme.textSecondary,
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -128,10 +152,21 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                   labelText: 'Route Name (e.g. Kozhikode Distribution 1)',
                   labelStyle: GoogleFonts.outfit(color: AppTheme.textSecondary),
                   filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.border)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.border)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primary)),
+                  fillColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.primary),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -142,10 +177,21 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                   labelText: 'Area / Zone',
                   labelStyle: GoogleFonts.outfit(color: AppTheme.textSecondary),
                   filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.border)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.border)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primary)),
+                  fillColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.primary),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -156,10 +202,21 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                   labelText: 'Start Landmark / Depot',
                   labelStyle: GoogleFonts.outfit(color: AppTheme.textSecondary),
                   filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.border)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.border)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primary)),
+                  fillColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.primary),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -170,44 +227,68 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                     backgroundColor: AppTheme.primary,
                     foregroundColor: const Color(0xFF0A0D14),
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  onPressed: isSubmitting ? null : () async {
-                    final name = nameCtrl.text.trim();
-                    if (name.isEmpty) return;
-                    setModalState(() => isSubmitting = true);
-                    try {
-                      final api = ref.read(apiServiceProvider);
-                      // 1. Create the Route
-                      final route = await api.createRoute({
-                        'name': name,
-                        'area': areaCtrl.text.trim(),
-                        'start_address': startAddrCtrl.text.trim(),
-                        'start_lat': 11.2588,
-                        'start_lng': 75.7804,
-                      });
-                      // 2. Start Trip immediately
-                      final trip = await api.startTrip(route.id);
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => TripScreen(tripId: trip.id)));
-                        _loadData();
-                      }
-                    } catch (e) {
-                      setModalState(() => isSubmitting = false);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Failed: $e'), backgroundColor: AppTheme.error),
-                        );
-                      }
-                    }
-                  },
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          final name = nameCtrl.text.trim();
+                          if (name.isEmpty) return;
+                          setModalState(() => isSubmitting = true);
+                          try {
+                            final api = ref.read(apiServiceProvider);
+                            // 1. Create the Route
+                            final route = await api.createRoute({
+                              'name': name,
+                              'area': areaCtrl.text.trim(),
+                              'start_address': startAddrCtrl.text.trim(),
+                              'start_lat': 11.2588,
+                              'start_lng': 75.7804,
+                            });
+                            // 2. Start Trip immediately
+                            final trip = await api.startTrip(route.id);
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => TripScreen(tripId: trip.id),
+                                ),
+                              );
+                              _loadData();
+                            }
+                          } catch (e) {
+                            setModalState(() => isSubmitting = false);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed: $e'),
+                                  backgroundColor: AppTheme.error,
+                                ),
+                              );
+                            }
+                          }
+                        },
                   icon: isSubmitting
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0A0D14)))
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFF0A0D14),
+                          ),
+                        )
                       : const Icon(Icons.rocket_launch_rounded, size: 20),
                   label: Text(
-                    isSubmitting ? 'Starting Trip...' : 'Create Route & Start First Trip',
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 15),
+                    isSubmitting
+                        ? 'Starting Trip...'
+                        : 'Create Route & Start First Trip',
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
               ),
@@ -219,9 +300,11 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
   }
 
   void _showOperatorOnly() {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Routes are created and assigned by an operator.'),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Routes are created and assigned by an operator.'),
+      ),
+    );
   }
 
   @override
@@ -231,12 +314,24 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     return Scaffold(
       drawer: const AppDrawer(isDriver: true),
       appBar: AppBar(
-        leading: Builder(builder: (context) => IconButton(icon: const Icon(Icons.menu), tooltip: 'Open menu', onPressed: () => Scaffold.of(context).openDrawer())),
-        title: Text('My Routes', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            tooltip: 'Open menu',
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+        title: Text(
+          'My Routes',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w700),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.person),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DriverProfileScreen())),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DriverProfileScreen()),
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.logout),
@@ -249,7 +344,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         foregroundColor: const Color(0xFF0A0D14),
         onPressed: _showOperatorOnly,
         icon: const Icon(Icons.add_road_rounded),
-        label: Text('New Route', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+        label: Text(
+          'New Route',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w700),
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -266,11 +364,17 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                       decoration: BoxDecoration(
                         color: AppTheme.error.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.error.withValues(alpha: 0.5)),
+                        border: Border.all(
+                          color: AppTheme.error.withValues(alpha: 0.5),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.location_off_rounded, color: AppTheme.error, size: 28),
+                          const Icon(
+                            Icons.location_off_rounded,
+                            color: AppTheme.error,
+                            size: 28,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -287,7 +391,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                                 const SizedBox(height: 2),
                                 Text(
                                   'Allow location access so your route drawing and stops can be recorded in real-time.',
-                                  style: GoogleFonts.outfit(color: AppTheme.textSecondary, fontSize: 12),
+                                  style: GoogleFonts.outfit(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ],
                             ),
@@ -297,11 +404,22 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.error,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
                             onPressed: _checkLocationPermission,
-                            child: Text('Enable', style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold)),
+                            child: Text(
+                              'Enable',
+                              style: GoogleFonts.outfit(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -311,12 +429,19 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                   // ── Header & Greeting ────────────────────────────
                   Text(
                     'Hello, ${auth.user?.name ?? 'Driver'}',
-                    style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                    style: GoogleFonts.outfit(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Record your delivery stops or continue an assigned route.',
-                    style: GoogleFonts.outfit(color: AppTheme.textSecondary, fontSize: 13),
+                    style: GoogleFonts.outfit(
+                      color: AppTheme.textSecondary,
+                      fontSize: 13,
+                    ),
                   ),
                   const SizedBox(height: 16),
 
@@ -330,52 +455,75 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: AppTheme.primary.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primary.withValues(alpha: 0.15),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.alt_route_rounded, color: AppTheme.primary, size: 24),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'First Trip / New Route',
-                                style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.textPrimary),
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primary.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Drive with GPS active to auto-draw the route and add stops on the road.',
-                                style: GoogleFonts.outfit(color: AppTheme.textSecondary, fontSize: 12),
+                              child: const Icon(
+                                Icons.alt_route_rounded,
+                                color: AppTheme.primary,
+                                size: 24,
                               ),
-                            ],
-                          ),
-                        ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'First Trip / New Route',
+                                    style: GoogleFonts.outfit(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Drive with GPS active to auto-draw the route and add stops on the road.',
+                                    style: GoogleFonts.outfit(
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 14),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primary,
-                            foregroundColor: const Color(0xFF0A0D14),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          onPressed: _showOperatorOnly,
-                          child: Text('+ Start', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primary,
+                              foregroundColor: const Color(0xFF0A0D14),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            onPressed: _showOperatorOnly,
+                            child: Text(
+                              '+ Start',
+                              style: GoogleFonts.outfit(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -386,7 +534,11 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                   if (_activeTrips.isNotEmpty) ...[
                     Text(
                       'Active Trip',
-                      style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                      style: GoogleFonts.outfit(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     ..._activeTrips.map((trip) => _activeTripCard(trip)),
@@ -394,7 +546,11 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                   ],
                   Text(
                     'My Routes',
-                    style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                    style: GoogleFonts.outfit(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   if (_routes.isEmpty)
@@ -404,14 +560,25 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                         child: Center(
                           child: Column(
                             children: [
-                              const Icon(Icons.route_outlined, size: 40, color: AppTheme.textMuted),
+                              const Icon(
+                                Icons.route_outlined,
+                                size: 40,
+                                color: AppTheme.textMuted,
+                              ),
                               const SizedBox(height: 8),
-                              Text('No routes assigned yet', style: GoogleFonts.outfit(color: AppTheme.textSecondary)),
+                              Text(
+                                'No routes assigned yet',
+                                style: GoogleFonts.outfit(
+                                  color: AppTheme.textSecondary,
+                                ),
+                              ),
                               const SizedBox(height: 12),
                               OutlinedButton.icon(
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: AppTheme.primary,
-                                  side: const BorderSide(color: AppTheme.primary),
+                                  side: const BorderSide(
+                                    color: AppTheme.primary,
+                                  ),
                                 ),
                                 onPressed: _showOperatorOnly,
                                 icon: const Icon(Icons.add),
@@ -431,7 +598,6 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     );
   }
 
-
   Widget _activeTripCard(Trip trip) {
     return Card(
       color: AppTheme.primary.withOpacity(0.05),
@@ -446,12 +612,22 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AppTheme.success,
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Text('ACTIVE', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'ACTIVE',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -465,9 +641,13 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
               const SizedBox(height: 12),
               LinearProgressIndicator(
                 value: trip.completionRate,
-                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  trip.completionRate > 0.7 ? AppTheme.success : AppTheme.warning,
+                  trip.completionRate > 0.7
+                      ? AppTheme.success
+                      : AppTheme.warning,
                 ),
               ),
               const SizedBox(height: 8),
@@ -490,7 +670,12 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
 
   Widget _routeCard(models.Route route) {
     final stops = route.activeStops;
-    final hasMap = route.startLat != null && route.startLng != null;
+    final routePath = route.geometry
+        .map((point) => LatLng(point[1], point[0]))
+        .toList();
+    final hasMap =
+        routePath.length >= 2 ||
+        (route.startLat != null && route.startLng != null);
 
     return Card(
       child: InkWell(
@@ -500,9 +685,14 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
             context: context,
             builder: (ctx) => AlertDialog(
               title: const Text('Start Trip?'),
-              content: Text('Start a trip on ${route.name} with ${stops.length} stops?'),
+              content: Text(
+                'Start a trip on ${route.name} with ${stops.length} stops?',
+              ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel'),
+                ),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(ctx, true),
                   child: const Text('Start'),
@@ -515,13 +705,21 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
               final api = ref.read(apiServiceProvider);
               final trip = await api.startTrip(route.id);
               if (mounted) {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => TripScreen(tripId: trip.id)));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TripScreen(tripId: trip.id),
+                  ),
+                );
                 _loadData();
               }
             } catch (e) {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.error),
+                  SnackBar(
+                    content: Text('Error: $e'),
+                    backgroundColor: AppTheme.error,
+                  ),
                 );
               }
             }
@@ -534,30 +732,56 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
               SizedBox(
                 height: 120,
                 child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(12),
+                  ),
                   child: FlutterMap(
                     options: MapOptions(
-                      initialCenter: LatLng(route.startLat!, route.startLng!),
+                      initialCenter: routePath.isNotEmpty
+                          ? routePath.first
+                          : LatLng(route.startLat!, route.startLng!),
                       initialZoom: 12,
-                      interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
+                      interactionOptions: const InteractionOptions(
+                        flags: InteractiveFlag.none,
+                      ),
                     ),
                     children: [
                       TileLayer(
-                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.routeapp',
                       ),
+                      if (routePath.length > 1)
+                        PolylineLayer(
+                          polylines: [
+                            Polyline(
+                              points: routePath,
+                              color: AppTheme.primary,
+                              strokeWidth: 4,
+                            ),
+                          ],
+                        ),
                       MarkerLayer(
                         markers: [
                           for (final stop in stops)
                             if (stop.customer != null)
                               Marker(
-                                point: LatLng(stop.customer!.latitude, stop.customer!.longitude),
+                                point: LatLng(
+                                  stop.customer!.latitude,
+                                  stop.customer!.longitude,
+                                ),
                                 width: 20,
                                 height: 20,
                                 child: CircleAvatar(
                                   radius: 8,
                                   backgroundColor: AppTheme.primary,
-                                  child: Text('${stop.sequence}', style: const TextStyle(color: Colors.white, fontSize: 8)),
+                                  child: Text(
+                                    '${stop.sequence}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 8,
+                                    ),
+                                  ),
                                 ),
                               ),
                         ],
@@ -571,19 +795,42 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(route.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text(
+                    route.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.store, size: 14, color: AppTheme.textSecondary),
+                      Icon(
+                        Icons.store,
+                        size: 14,
+                        color: AppTheme.textSecondary,
+                      ),
                       const SizedBox(width: 4),
-                      Text('${stops.length} stops', style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+                      Text(
+                        '${stops.length} stops',
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
                       const SizedBox(width: 12),
-                      Icon(Icons.calendar_today, size: 14, color: AppTheme.textSecondary),
+                      Icon(
+                        Icons.calendar_today,
+                        size: 14,
+                        color: AppTheme.textSecondary,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         _formatDays(route.workingDays),
-                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -599,7 +846,13 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
   String _formatDays(String? workingDays) {
     if (workingDays == null) return 'Not set';
     try {
-      final days = List<String>.from(Uri.decodeComponent(workingDays).replaceAll('[', '').replaceAll(']', '').split(',').map((d) => d.trim().replaceAll('"', '')));
+      final days = List<String>.from(
+        Uri.decodeComponent(workingDays)
+            .replaceAll('[', '')
+            .replaceAll(']', '')
+            .split(',')
+            .map((d) => d.trim().replaceAll('"', '')),
+      );
       return days.join(', ');
     } catch (e) {
       return workingDays;

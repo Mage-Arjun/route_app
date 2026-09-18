@@ -27,7 +27,10 @@ class _VehicleListScreenState extends ConsumerState<VehicleListScreen> {
     try {
       final api = ref.read(apiServiceProvider);
       final vehicles = await api.getVehicles();
-      setState(() { _vehicles = vehicles; _loading = false; });
+      setState(() {
+        _vehicles = vehicles;
+        _loading = false;
+      });
     } catch (e) {
       setState(() => _loading = false);
     }
@@ -39,7 +42,10 @@ class _VehicleListScreenState extends ConsumerState<VehicleListScreen> {
       appBar: AppBar(title: const Text('Vehicles & Drivers')),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => const VehicleFormScreen()));
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const VehicleFormScreen()),
+          );
           if (result == true) _loadVehicles();
         },
         child: const Icon(Icons.add),
@@ -63,84 +69,119 @@ class _VehicleListScreenState extends ConsumerState<VehicleListScreen> {
         borderRadius: BorderRadius.circular(12),
         onTap: () {},
         child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(_vehicleIcon(vehicle.vehicleType), color: AppTheme.primary, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    vehicle.vehicleNumber,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppTheme.info.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    vehicle.vehicleType.toUpperCase(),
-                    style: TextStyle(color: AppTheme.info, fontSize: 11, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.scale, size: 14, color: AppTheme.textSecondary),
-                const SizedBox(width: 4),
-                Text('${vehicle.capacityKg.toInt()} kg capacity',
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
-              ],
-            ),
-            if (vehicle.assignedDriver != null) ...[
-              const SizedBox(height: 8),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Row(
                 children: [
-                  CircleAvatar(
-                    radius: 12,
-                    backgroundColor: AppTheme.primary.withOpacity(0.1),
-                    child: Icon(Icons.person, size: 14, color: AppTheme.primary),
+                  Icon(
+                    _vehicleIcon(vehicle.vehicleType),
+                    color: AppTheme.primary,
+                    size: 20,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    vehicle.assignedDriver!.name,
-                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  Expanded(
+                    child: Text(
+                      vehicle.vehicleNumber,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '(${vehicle.assignedDriver!.role})',
-                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.info.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      vehicle.vehicleType.toUpperCase(),
+                      style: TextStyle(
+                        color: AppTheme.info,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ] else ...[
               const SizedBox(height: 8),
-              Text(
-                'No driver assigned',
-                style: TextStyle(color: AppTheme.warning, fontSize: 12, fontStyle: FontStyle.italic),
+              Row(
+                children: [
+                  Icon(Icons.scale, size: 14, color: AppTheme.textSecondary),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${vehicle.capacityKg.toInt()} kg capacity',
+                    style: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
               ),
+              if (vehicle.assignedDriver != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 12,
+                      backgroundColor: AppTheme.primary.withOpacity(0.1),
+                      child: Icon(
+                        Icons.person,
+                        size: 14,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      vehicle.assignedDriver!.name,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '(${vehicle.assignedDriver!.role})',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                const SizedBox(height: 8),
+                Text(
+                  'No driver assigned',
+                  style: TextStyle(
+                    color: AppTheme.warning,
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
-      ),
       ),
     );
   }
 
   IconData _vehicleIcon(String type) {
     switch (type) {
-      case 'van': return Icons.local_shipping;
-      case 'truck': return Icons.fire_truck;
-      case 'car': return Icons.directions_car;
-      case 'bike': return Icons.two_wheeler;
-      default: return Icons.directions_car;
+      case 'van':
+        return Icons.local_shipping;
+      case 'truck':
+        return Icons.fire_truck;
+      case 'car':
+        return Icons.directions_car;
+      case 'bike':
+        return Icons.two_wheeler;
+      default:
+        return Icons.directions_car;
     }
   }
 }

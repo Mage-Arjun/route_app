@@ -26,8 +26,14 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
     try {
       final api = ref.read(apiServiceProvider);
       final data = await api.getRouteChanges();
-      final changes = (data as List).map((c) => RouteChange.fromJson(c)).toList();
-      if (mounted) setState(() { _changes = changes; _loading = false; });
+      final changes = (data as List)
+          .map((c) => RouteChange.fromJson(c))
+          .toList();
+      if (mounted)
+        setState(() {
+          _changes = changes;
+          _loading = false;
+        });
     } catch (e) {
       if (mounted) setState(() => _loading = false);
     }
@@ -39,7 +45,10 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
       await api.approveChange(id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Change approved'), backgroundColor: AppTheme.success),
+        const SnackBar(
+          content: Text('Change approved'),
+          backgroundColor: AppTheme.success,
+        ),
       );
       _loadChanges();
     } catch (e) {
@@ -56,7 +65,10 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
       await api.rejectChange(id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Change rejected'), backgroundColor: AppTheme.warning),
+        const SnackBar(
+          content: Text('Change rejected'),
+          backgroundColor: AppTheme.warning,
+        ),
       );
       _loadChanges();
     } catch (e) {
@@ -76,24 +88,28 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : pending.isEmpty
-              ? const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.check_circle_outline, size: 64, color: AppTheme.success),
-                      SizedBox(height: 16),
-                      Text('No pending approvals', style: TextStyle(fontSize: 16)),
-                    ],
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.check_circle_outline,
+                    size: 64,
+                    color: AppTheme.success,
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadChanges,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: pending.length,
-                    itemBuilder: (context, index) => _changeCard(pending[index]),
-                  ),
-                ),
+                  SizedBox(height: 16),
+                  Text('No pending approvals', style: TextStyle(fontSize: 16)),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadChanges,
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: pending.length,
+                itemBuilder: (context, index) => _changeCard(pending[index]),
+              ),
+            ),
     );
   }
 
@@ -117,10 +133,26 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            _infoRow(Icons.person, 'Requested by', change.requestedByName ?? 'Unknown'),
-            _infoRow(Icons.numbers, 'Position', '#${change.recommendedSequence}'),
-            _infoRow(Icons.straighten, 'Extra distance', '${change.additionalDistanceKm} km'),
-            _infoRow(Icons.timer, 'Extra time', '${change.additionalTimeMins} min'),
+            _infoRow(
+              Icons.person,
+              'Requested by',
+              change.requestedByName ?? 'Unknown',
+            ),
+            _infoRow(
+              Icons.numbers,
+              'Position',
+              '#${change.recommendedSequence}',
+            ),
+            _infoRow(
+              Icons.straighten,
+              'Extra distance',
+              '${change.additionalDistanceKm} km',
+            ),
+            _infoRow(
+              Icons.timer,
+              'Extra time',
+              '${change.additionalTimeMins} min',
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -129,7 +161,9 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                     onPressed: () => _reject(change.id),
                     icon: const Icon(Icons.close, size: 16),
                     label: const Text('Reject'),
-                    style: OutlinedButton.styleFrom(foregroundColor: AppTheme.error),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.error,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -155,8 +189,14 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
         children: [
           Icon(icon, size: 14, color: AppTheme.textSecondary),
           const SizedBox(width: 6),
-          Text('$label: ', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-          Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+          Text(
+            '$label: ',
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );

@@ -34,6 +34,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final _client = ApiClient();
 
   AuthNotifier(this._api) : super(AuthState()) {
+    // Restore the JWT session once when the provider is created.
     _tryAutoLogin();
   }
 
@@ -53,6 +54,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> login(String email, String password) async {
+    // Keep token storage here so screens only deal with success/error state.
     state = state.copyWith(isLoading: true, error: null);
     try {
       final result = await _api.login(email, password);
@@ -60,7 +62,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final user = User.fromJson(result['user']);
       state = state.copyWith(user: user, isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Invalid email or password');
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Invalid email or password',
+      );
     }
   }
 

@@ -17,40 +17,45 @@ class ApiConfig {
 class ApiClient {
   static final ApiClient _instance = ApiClient._();
   factory ApiClient() => _instance;
-  
+
   late final Dio dio;
   final _storage = const FlutterSecureStorage();
 
   ApiClient._() {
-    dio = Dio(BaseOptions(
-      baseUrl: ApiConfig.initialBaseUrl,
-      connectTimeout: ApiConfig.timeout,
-      receiveTimeout: ApiConfig.timeout,
-      headers: {'Content-Type': 'application/json'},
-    ));
+    // One Dio instance owns base URL selection, JWT injection, and 401 cleanup.
+    dio = Dio(
+      BaseOptions(
+        baseUrl: ApiConfig.initialBaseUrl,
+        connectTimeout: ApiConfig.timeout,
+        receiveTimeout: ApiConfig.timeout,
+        headers: {'Content-Type': 'application/json'},
+      ),
+    );
 
-    dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        // Read custom saved server URL if user changed it in-app
-        final customUrl = await _storage.read(key: 'custom_base_url');
-        if (customUrl != null && customUrl.isNotEmpty) {
-          options.baseUrl = customUrl;
-        }
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          // Read custom saved server URL if user changed it in-app
+          final customUrl = await _storage.read(key: 'custom_base_url');
+          if (customUrl != null && customUrl.isNotEmpty) {
+            options.baseUrl = customUrl;
+          }
 
-        final token = await _storage.read(key: 'jwt_token');
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
-        }
-        handler.next(options);
-      },
-      onError: (error, handler) {
-        if (error.response?.statusCode == 401) {
-          _storage.delete(key: 'jwt_token');
-          _storage.delete(key: 'user_data');
-        }
-        handler.next(error);
-      },
-    ));
+          final token = await _storage.read(key: 'jwt_token');
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          handler.next(options);
+        },
+        onError: (error, handler) {
+          if (error.response?.statusCode == 401) {
+            _storage.delete(key: 'jwt_token');
+            _storage.delete(key: 'user_data');
+          }
+          handler.next(error);
+        },
+      ),
+    );
   }
 
   Future<String> getBaseUrl() async {

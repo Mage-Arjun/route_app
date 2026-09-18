@@ -7,7 +7,8 @@ class DriverProfileScreen extends ConsumerStatefulWidget {
   const DriverProfileScreen({super.key});
 
   @override
-  ConsumerState<DriverProfileScreen> createState() => _DriverProfileScreenState();
+  ConsumerState<DriverProfileScreen> createState() =>
+      _DriverProfileScreenState();
 }
 
 class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
@@ -44,7 +45,10 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
       setState(() => _editing = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated'), backgroundColor: AppTheme.success),
+          const SnackBar(
+            content: Text('Profile updated'),
+            backgroundColor: AppTheme.success,
+          ),
         );
       }
     } catch (e) {
@@ -71,7 +75,11 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
             TextButton(
               onPressed: _saving ? null : _save,
               child: _saving
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Text('Save'),
             )
           else
@@ -90,7 +98,11 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
               backgroundColor: AppTheme.primary.withValues(alpha: 0.1),
               child: Text(
                 (user?.name ?? 'D')[0].toUpperCase(),
-                style: TextStyle(fontSize: 32, color: AppTheme.primary, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 32,
+                  color: AppTheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -129,8 +141,14 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
     return Card(
       child: ListTile(
         leading: Icon(icon, color: AppTheme.primary),
-        title: Text(label, style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-        subtitle: Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+        title: Text(
+          label,
+          style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+        ),
+        subtitle: Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
       ),
     );
   }

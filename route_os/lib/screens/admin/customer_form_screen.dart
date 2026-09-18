@@ -42,7 +42,9 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
     _notesCtrl = TextEditingController(text: c?.notes ?? '');
     _latCtrl = TextEditingController(text: c?.latitude.toString() ?? '');
     _lngCtrl = TextEditingController(text: c?.longitude.toString() ?? '');
-    _durationCtrl = TextEditingController(text: (c?.serviceDurationMins ?? 15).toString());
+    _durationCtrl = TextEditingController(
+      text: (c?.serviceDurationMins ?? 15).toString(),
+    );
     _type = c?.customerType ?? 'retail';
     if (c != null) _pickedLocation = LatLng(c.latitude, c.longitude);
   }
@@ -67,15 +69,23 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
     try {
       final api = ref.read(apiServiceProvider);
       final data = {
-        'code': widget.customer?.code ?? 'CUS-${DateTime.now().millisecondsSinceEpoch}',
+        'code':
+            widget.customer?.code ??
+            'CUS-${DateTime.now().millisecondsSinceEpoch}',
         'name': _nameCtrl.text.trim(),
-        'address': _addressCtrl.text.trim().isEmpty ? null : _addressCtrl.text.trim(),
+        'address': _addressCtrl.text.trim().isEmpty
+            ? null
+            : _addressCtrl.text.trim(),
         'latitude': double.parse(_latCtrl.text),
         'longitude': double.parse(_lngCtrl.text),
         'phone': _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
         'email': _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
-        'contact_name': _contactCtrl.text.trim().isEmpty ? null : _contactCtrl.text.trim(),
-        'service_notes': _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+        'contact_name': _contactCtrl.text.trim().isEmpty
+            ? null
+            : _contactCtrl.text.trim(),
+        'service_notes': _notesCtrl.text.trim().isEmpty
+            ? null
+            : _notesCtrl.text.trim(),
         'status': 'active',
       };
       if (widget.customer != null) {
@@ -105,7 +115,11 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
           TextButton(
             onPressed: _saving ? null : _save,
             child: _saving
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : const Text('Save'),
           ),
         ],
@@ -123,7 +137,8 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
                   child: FlutterMap(
                     mapController: _mapController,
                     options: MapOptions(
-                      initialCenter: _pickedLocation ?? const LatLng(11.2588, 75.7804),
+                      initialCenter:
+                          _pickedLocation ?? const LatLng(11.2588, 75.7804),
                       initialZoom: 13,
                       onTap: (tapPos, latLng) {
                         setState(() {
@@ -134,21 +149,50 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
                       },
                     ),
                     children: [
-                      TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.routeapp'),
+                      TileLayer(
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.routeapp',
+                      ),
                       if (_pickedLocation != null)
-                        MarkerLayer(markers: [
-                          Marker(point: _pickedLocation!, width: 40, height: 40, child: const Icon(Icons.location_pin, color: AppTheme.error, size: 36)),
-                        ]),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: _pickedLocation!,
+                              width: 40,
+                              height: 40,
+                              child: const Icon(
+                                Icons.location_pin,
+                                color: AppTheme.error,
+                                size: 36,
+                              ),
+                            ),
+                          ],
+                        ),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 8),
-              Row(children: [
-                Expanded(child: _field(_latCtrl, 'Latitude', keyboardType: TextInputType.number)),
-                const SizedBox(width: 8),
-                Expanded(child: _field(_lngCtrl, 'Longitude', keyboardType: TextInputType.number)),
-              ]),
+              Row(
+                children: [
+                  Expanded(
+                    child: _field(
+                      _latCtrl,
+                      'Latitude',
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _field(
+                      _lngCtrl,
+                      'Longitude',
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
+              ),
             ]),
             const SizedBox(height: 16),
             _section('Details', [
@@ -161,7 +205,10 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
                 decoration: const InputDecoration(labelText: 'Type'),
                 items: const [
                   DropdownMenuItem(value: 'retail', child: Text('Retail')),
-                  DropdownMenuItem(value: 'wholesale', child: Text('Wholesale')),
+                  DropdownMenuItem(
+                    value: 'wholesale',
+                    child: Text('Wholesale'),
+                  ),
                   DropdownMenuItem(value: 'hotel', child: Text('Hotel')),
                   DropdownMenuItem(value: 'pharmacy', child: Text('Pharmacy')),
                 ],
@@ -174,11 +221,19 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
               const SizedBox(height: 12),
               _field(_phoneCtrl, 'Phone', keyboardType: TextInputType.phone),
               const SizedBox(height: 12),
-              _field(_emailCtrl, 'Email', keyboardType: TextInputType.emailAddress),
+              _field(
+                _emailCtrl,
+                'Email',
+                keyboardType: TextInputType.emailAddress,
+              ),
             ]),
             const SizedBox(height: 16),
             _section('Other', [
-              _field(_durationCtrl, 'Service Duration (mins)', keyboardType: TextInputType.number),
+              _field(
+                _durationCtrl,
+                'Service Duration (mins)',
+                keyboardType: TextInputType.number,
+              ),
               const SizedBox(height: 12),
               _field(_notesCtrl, 'Notes', maxLines: 3),
             ]),
@@ -193,21 +248,34 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primary)),
+        Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primary,
+          ),
+        ),
         const SizedBox(height: 8),
         ...children,
       ],
     );
   }
 
-  Widget _field(TextEditingController ctrl, String label,
-      {bool required = false, TextInputType? keyboardType, int maxLines = 1}) {
+  Widget _field(
+    TextEditingController ctrl,
+    String label, {
+    bool required = false,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+  }) {
     return TextFormField(
       controller: ctrl,
       keyboardType: keyboardType,
       maxLines: maxLines,
       decoration: InputDecoration(labelText: label),
-      validator: required ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null : null,
+      validator: required
+          ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+          : null,
     );
   }
 }

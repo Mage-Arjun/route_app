@@ -30,13 +30,18 @@ async def _automation_loop(stop_event: asyncio.Event):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings.validate_runtime(); init_db()
-    # Keep the product demo useful after importing the older activity data.
-    # This is idempotent and only fills the new customer/route layer when it
-    # has not been created yet.
-    from database import SessionLocal
-    from seed import seed_product_demo
-    with SessionLocal() as db:
-        seed_product_demo(db)
+    # Never create accounts or operational records implicitly. Seed data is a
+    # deliberate local-development choice controlled by configuration.
+    if settings.SEED_DEMO_DATA:
+        from database import SessionLocal
+        from seed import seed_product_demo
+        with SessionLocal() as db:
+            seed_product_demo(db)
+    if settings.SEED_QUICK_ACCOUNTS:
+        from database import SessionLocal
+        from seed import seed_quick_accounts
+        with SessionLocal() as db:
+            seed_quick_accounts(db)
     event_engine.enabled = True
     stop_event = asyncio.Event()
     automation_task = asyncio.create_task(_automation_loop(stop_event))
@@ -48,6 +53,8 @@ async def lifespan(app: FastAPI):
         await automation_task
         event_engine.subscribers.clear()
 
+# main.py only composes the application. Domain behavior belongs in the
+# routers/services imported above.
 app = FastAPI(title=settings.APP_NAME, version=settings.VERSION, lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,

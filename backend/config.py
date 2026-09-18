@@ -14,11 +14,17 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     TUI_BACKEND_URL: str = "http://127.0.0.1:8000"
-    TUI_EMAIL: str = "admin@routeos.local"
-    TUI_PASSWORD: str = "admin123"
+    # Set these explicitly when running the optional terminal console.
+    TUI_EMAIL: str = ""
+    TUI_PASSWORD: str = ""
     GPS_STALE_THRESHOLD: int = 300
     AUTOMATION_ENABLED: bool = True
-    SEED_DEMO_DATA: bool = True
+    # Production starts with an empty database. Enable explicitly for local
+    # development only: SEED_DEMO_DATA=true.
+    SEED_DEMO_DATA: bool = False
+    # Creates only the three local quick-login accounts. It never creates
+    # routes, customers, vehicles, trips, or other operational data.
+    SEED_QUICK_ACCOUNTS: bool = False
     VERSION: str = "1.0.0"
 
     @property

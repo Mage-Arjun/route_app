@@ -8,6 +8,8 @@ import 'screens/admin/dashboard_screen.dart';
 import 'screens/driver/driver_home_screen.dart';
 
 void main() {
+  // ProviderScope makes authentication, preferences, and ApiService available
+  // to every screen without passing them through widget constructors.
   runApp(const ProviderScope(child: RouteApp()));
 }
 
@@ -16,6 +18,8 @@ class RouteApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // This is the only top-level navigation decision. Individual screens
+    // should not decide which role home to display.
     final auth = ref.watch(authProvider);
     final isDriver = auth.isDriver;
 
@@ -28,6 +32,7 @@ class RouteApp extends ConsumerWidget {
       home = const LoginScreen();
     }
 
+    // ThemeMode is persisted by PreferencesNotifier and applied app-wide here.
     final preferences = ref.watch(preferencesProvider);
     return MaterialApp(
       title: 'RouteOS',

@@ -138,6 +138,9 @@ class Route(BaseModel):
     code: Mapped[str] = mapped_column(String(32), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(160))
     description: Mapped[str | None] = mapped_column(Text)
+    # Ordered [longitude, latitude] pairs captured by the map planner or GPS.
+    # Keeping the path on the route lets drivers and admins see the same plan.
+    geometry: Mapped[list] = mapped_column(JSON, default=list)
     status: Mapped[str] = mapped_column(String(24), default="active", index=True)
     assigned_driver_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     assigned_vehicle_id: Mapped[int | None] = mapped_column(ForeignKey("vehicles.id"))

@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../models/user.dart';
 import '../../models/vehicle.dart';
 import '../../models/route.dart' as models;
+import 'route_builder_screen.dart';
 
 class RouteFormScreen extends ConsumerStatefulWidget {
   final models.Route? route;
@@ -27,6 +28,7 @@ class _RouteFormScreenState extends ConsumerState<RouteFormScreen> {
   List<User> _drivers = [];
   List<Vehicle> _vehicles = [];
   LatLng? _depotLocation;
+  List<List<double>> _geometry = const [];
 
   @override
   void initState() {
@@ -36,6 +38,7 @@ class _RouteFormScreenState extends ConsumerState<RouteFormScreen> {
     _areaCtrl = TextEditingController(text: r?.area ?? '');
     _driverId = r?.assignedDriverId;
     _vehicleId = r?.assignedVehicleId;
+    _geometry = r?.geometry ?? const [];
     if (r?.startLat != null && r?.startLng != null) {
       _depotLocation = LatLng(r!.startLat!, r.startLng!);
     } else {
@@ -49,7 +52,10 @@ class _RouteFormScreenState extends ConsumerState<RouteFormScreen> {
       final api = ref.read(apiServiceProvider);
       final users = await api.getUsers(role: 'driver');
       final vehicles = await api.getVehicles();
-      setState(() { _drivers = users; _vehicles = vehicles; });
+      setState(() {
+        _drivers = users;
+        _vehicles = vehicles;
+      });
     } catch (_) {}
   }
 
@@ -66,11 +72,16 @@ class _RouteFormScreenState extends ConsumerState<RouteFormScreen> {
     try {
       final api = ref.read(apiServiceProvider);
       final data = {
-        'code': widget.route?.code ?? 'ROUTE-${DateTime.now().millisecondsSinceEpoch}',
+        'code':
+            widget.route?.code ??
+            'ROUTE-${DateTime.now().millisecondsSinceEpoch}',
         'name': _nameCtrl.text.trim(),
-        'description': _areaCtrl.text.trim().isEmpty ? null : _areaCtrl.text.trim(),
+        'description': _areaCtrl.text.trim().isEmpty
+            ? null
+            : _areaCtrl.text.trim(),
         'assigned_driver_id': _driverId,
         'assigned_vehicle_id': _vehicleId,
+        'geometry': _geometry,
       };
       if (widget.route != null) {
         await api.updateRoute(widget.route!.id, data);
@@ -89,6 +100,24 @@ class _RouteFormScreenState extends ConsumerState<RouteFormScreen> {
     }
   }
 
+  Future<void> _openRoutePlanner() async {
+    final draft = await Navigator.push<RouteDraft>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RouteBuilderScreen(
+          initialPoints: _geometry
+              .map((point) => LatLng(point[1], point[0]))
+              .toList(),
+        ),
+      ),
+    );
+    if (draft == null || !mounted) return;
+    setState(() {
+      _geometry = draft.geometry;
+      _depotLocation = draft.start;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.route != null;
@@ -99,7 +128,11 @@ class _RouteFormScreenState extends ConsumerState<RouteFormScreen> {
           TextButton(
             onPressed: _saving ? null : _save,
             child: _saving
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : const Text('Save'),
           ),
         ],
@@ -113,7 +146,23 @@ class _RouteFormScreenState extends ConsumerState<RouteFormScreen> {
             const SizedBox(height: 12),
             _field(_areaCtrl, 'Area'),
             const SizedBox(height: 16),
-            Text('Depot Location', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primary)),
+            OutlinedButton.icon(
+              onPressed: _openRoutePlanner,
+              icon: const Icon(Icons.route_outlined),
+              label: Text(
+                _geometry.length >= 2
+                    ? 'Edit route path (${_geometry.length} points)'
+                    : 'Open route planner',
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Depot Location',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primary,
+              ),
+            ),
             const SizedBox(height: 8),
             SizedBox(
               height: 200,
@@ -129,11 +178,26 @@ class _RouteFormScreenState extends ConsumerState<RouteFormScreen> {
                     },
                   ),
                   children: [
-                    TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.routeapp'),
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.routeapp',
+                    ),
                     if (_depotLocation != null)
-                      MarkerLayer(markers: [
-                        Marker(point: _depotLocation!, width: 40, height: 40, child: const Icon(Icons.warehouse, color: AppTheme.primary, size: 36)),
-                      ]),
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: _depotLocation!,
+                            width: 40,
+                            height: 40,
+                            child: const Icon(
+                              Icons.warehouse,
+                              color: AppTheme.primary,
+                              size: 36,
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
               ),
@@ -144,7 +208,10 @@ class _RouteFormScreenState extends ConsumerState<RouteFormScreen> {
               decoration: const InputDecoration(labelText: 'Assigned Driver'),
               items: [
                 const DropdownMenuItem<int?>(value: null, child: Text('None')),
-                ..._drivers.map((d) => DropdownMenuItem<int?>(value: d.id, child: Text(d.name))),
+                ..._drivers.map(
+                  (d) =>
+                      DropdownMenuItem<int?>(value: d.id, child: Text(d.name)),
+                ),
               ],
               onChanged: (v) => setState(() => _driverId = v),
             ),
@@ -154,7 +221,12 @@ class _RouteFormScreenState extends ConsumerState<RouteFormScreen> {
               decoration: const InputDecoration(labelText: 'Assigned Vehicle'),
               items: [
                 const DropdownMenuItem<int?>(value: null, child: Text('None')),
-                ..._vehicles.map((v) => DropdownMenuItem<int?>(value: v.id, child: Text('${v.vehicleNumber} (${v.vehicleType})'))),
+                ..._vehicles.map(
+                  (v) => DropdownMenuItem<int?>(
+                    value: v.id,
+                    child: Text('${v.vehicleNumber} (${v.vehicleType})'),
+                  ),
+                ),
               ],
               onChanged: (v) => setState(() => _vehicleId = v),
             ),
@@ -164,11 +236,17 @@ class _RouteFormScreenState extends ConsumerState<RouteFormScreen> {
     );
   }
 
-  Widget _field(TextEditingController ctrl, String label, {bool required = false}) {
+  Widget _field(
+    TextEditingController ctrl,
+    String label, {
+    bool required = false,
+  }) {
     return TextFormField(
       controller: ctrl,
       decoration: InputDecoration(labelText: label),
-      validator: required ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null : null,
+      validator: required
+          ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+          : null,
     );
   }
 }

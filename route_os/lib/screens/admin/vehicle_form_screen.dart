@@ -29,7 +29,9 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
     final v = widget.vehicle;
     _numberCtrl = TextEditingController(text: v?.vehicleNumber ?? '');
     _regCtrl = TextEditingController(text: v?.registration ?? '');
-    _capacityCtrl = TextEditingController(text: (v?.capacityKg ?? 500).toInt().toString());
+    _capacityCtrl = TextEditingController(
+      text: (v?.capacityKg ?? 500).toInt().toString(),
+    );
     _type = v?.vehicleType ?? 'van';
     _driverId = v?.assignedDriverId;
     _loadDrivers();
@@ -58,7 +60,9 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
       final api = ref.read(apiServiceProvider);
       final data = {
         'identifier': _numberCtrl.text.trim(),
-        'name': _regCtrl.text.trim().isEmpty ? _numberCtrl.text.trim() : _regCtrl.text.trim(),
+        'name': _regCtrl.text.trim().isEmpty
+            ? _numberCtrl.text.trim()
+            : _regCtrl.text.trim(),
         'type': _type,
       };
       if (widget.vehicle != null) {
@@ -88,7 +92,11 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
           TextButton(
             onPressed: _saving ? null : _save,
             child: _saving
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : const Text('Save'),
           ),
         ],
@@ -114,14 +122,21 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
               onChanged: (v) => setState(() => _type = v!),
             ),
             const SizedBox(height: 12),
-            _field(_capacityCtrl, 'Capacity (kg)', keyboardType: TextInputType.number),
+            _field(
+              _capacityCtrl,
+              'Capacity (kg)',
+              keyboardType: TextInputType.number,
+            ),
             const SizedBox(height: 12),
             DropdownButtonFormField<int?>(
               value: _driverId,
               decoration: const InputDecoration(labelText: 'Assigned Driver'),
               items: [
                 const DropdownMenuItem<int?>(value: null, child: Text('None')),
-                ..._drivers.map((d) => DropdownMenuItem<int?>(value: d.id, child: Text(d.name))),
+                ..._drivers.map(
+                  (d) =>
+                      DropdownMenuItem<int?>(value: d.id, child: Text(d.name)),
+                ),
               ],
               onChanged: (v) => setState(() => _driverId = v),
             ),
@@ -131,13 +146,19 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
     );
   }
 
-  Widget _field(TextEditingController ctrl, String label,
-      {bool required = false, TextInputType? keyboardType}) {
+  Widget _field(
+    TextEditingController ctrl,
+    String label, {
+    bool required = false,
+    TextInputType? keyboardType,
+  }) {
     return TextFormField(
       controller: ctrl,
       keyboardType: keyboardType,
       decoration: InputDecoration(labelText: label),
-      validator: required ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null : null,
+      validator: required
+          ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+          : null,
     );
   }
 }

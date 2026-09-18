@@ -26,10 +26,14 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen>
   void initState() {
     super.initState();
     _radarCtrl = AnimationController(
-      vsync: this, duration: const Duration(seconds: 2),
+      vsync: this,
+      duration: const Duration(seconds: 2),
     )..repeat();
     _fetch();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) => _fetch());
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 10),
+      (_) => _fetch(),
+    );
   }
 
   @override
@@ -86,20 +90,25 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen>
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: AppTheme.primary.withOpacity(0.6), width: 1,
+                            color: AppTheme.primary.withOpacity(0.6),
+                            width: 1,
                           ),
                         ),
                       ),
                     ),
                     Container(
-                      width: 30, height: 30,
+                      width: 30,
+                      height: 30,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: AppTheme.primary.withOpacity(0.15),
                         border: Border.all(color: AppTheme.primary, width: 1.5),
                       ),
-                      child: const Icon(Icons.gps_fixed_rounded,
-                          color: AppTheme.primary, size: 14),
+                      child: const Icon(
+                        Icons.gps_fixed_rounded,
+                        color: AppTheme.primary,
+                        size: 14,
+                      ),
                     ),
                   ],
                 );
@@ -109,7 +118,8 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen>
             Text(
               'Live Tracking',
               style: GoogleFonts.outfit(
-                fontSize: 20, fontWeight: FontWeight.w700,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
                 color: AppTheme.textPrimary,
               ),
             ),
@@ -117,7 +127,10 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen>
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: AppTheme.textSecondary),
+            icon: const Icon(
+              Icons.refresh_rounded,
+              color: AppTheme.textSecondary,
+            ),
             onPressed: _fetch,
             tooltip: 'Refresh',
           ),
@@ -137,27 +150,37 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen>
             child: Row(
               children: [
                 Container(
-                  width: 8, height: 8,
+                  width: 8,
+                  height: 8,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _error != null ? AppTheme.error : AppTheme.success,
                     boxShadow: _error == null
-                        ? [BoxShadow(color: AppTheme.success.withOpacity(0.6), blurRadius: 8)]
+                        ? [
+                            BoxShadow(
+                              color: AppTheme.success.withOpacity(0.6),
+                              blurRadius: 8,
+                            ),
+                          ]
                         : [],
                   ),
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  _error != null ? 'Offline' : 'Live — auto-refreshes every 10s',
+                  _error != null
+                      ? 'Offline'
+                      : 'Live — auto-refreshes every 10s',
                   style: GoogleFonts.outfit(
-                    fontSize: 12, color: AppTheme.textSecondary,
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
                   ),
                 ),
                 const Spacer(),
                 Text(
                   'Last: ${DateFormat('HH:mm:ss').format(_lastRefresh)}',
                   style: GoogleFonts.jetBrainsMono(
-                    fontSize: 11, color: AppTheme.textMuted,
+                    fontSize: 11,
+                    color: AppTheme.textMuted,
                   ),
                 ),
               ],
@@ -172,7 +195,8 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen>
                 Text(
                   '${_locations.length} vehicle${_locations.length != 1 ? 's' : ''} tracked',
                   style: GoogleFonts.outfit(
-                    fontSize: 14, fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                     color: AppTheme.textSecondary,
                   ),
                 ),
@@ -192,21 +216,25 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen>
                           strokeWidth: 2,
                         ),
                         const SizedBox(height: 12),
-                        Text('Fetching live positions…',
-                            style: GoogleFonts.outfit(color: AppTheme.textSecondary)),
+                        Text(
+                          'Fetching live positions…',
+                          style: GoogleFonts.outfit(
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   )
                 : _error != null
-                    ? _ErrorState(error: _error!, onRetry: _fetch)
-                    : _locations.isEmpty
-                        ? _EmptyState()
-                        : ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                            itemCount: _locations.length,
-                            itemBuilder: (_, i) =>
-                                _DriverLocationCard(data: _locations[i], index: i),
-                          ),
+                ? _ErrorState(error: _error!, onRetry: _fetch)
+                : _locations.isEmpty
+                ? _EmptyState()
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    itemCount: _locations.length,
+                    itemBuilder: (_, i) =>
+                        _DriverLocationCard(data: _locations[i], index: i),
+                  ),
           ),
         ],
       ),
@@ -233,11 +261,16 @@ class _DriverLocationCard extends StatelessWidget {
 
     DateTime? ts;
     if (timestamp != null) {
-      try { ts = DateTime.parse(timestamp).toLocal(); } catch (_) {}
+      try {
+        ts = DateTime.parse(timestamp).toLocal();
+      } catch (_) {}
     }
 
     final colors = [
-      AppTheme.primary, AppTheme.accentBlue, AppTheme.purple, AppTheme.gold,
+      AppTheme.primary,
+      AppTheme.accentBlue,
+      AppTheme.purple,
+      AppTheme.gold,
       AppTheme.accent,
     ];
     final color = colors[index % colors.length];
@@ -249,7 +282,11 @@ class _DriverLocationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withOpacity(0.25), width: 1),
         boxShadow: [
-          BoxShadow(color: color.withOpacity(0.08), blurRadius: 16, spreadRadius: -4),
+          BoxShadow(
+            color: color.withOpacity(0.08),
+            blurRadius: 16,
+            spreadRadius: -4,
+          ),
         ],
       ),
       child: Padding(
@@ -262,7 +299,8 @@ class _DriverLocationCard extends StatelessWidget {
               children: [
                 // avatar
                 Container(
-                  width: 44, height: 44,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
@@ -275,7 +313,8 @@ class _DriverLocationCard extends StatelessWidget {
                     child: Text(
                       name[0].toUpperCase(),
                       style: GoogleFonts.outfit(
-                        fontSize: 18, fontWeight: FontWeight.w800,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
                         color: Theme.of(context).colorScheme.onPrimary,
                       ),
                     ),
@@ -289,7 +328,8 @@ class _DriverLocationCard extends StatelessWidget {
                       Text(
                         name,
                         style: GoogleFonts.outfit(
-                          fontSize: 16, fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
                           color: AppTheme.textPrimary,
                         ),
                       ),
@@ -297,7 +337,9 @@ class _DriverLocationCard extends StatelessWidget {
                         Text(
                           'Trip #$tripId',
                           style: GoogleFonts.outfit(
-                            fontSize: 12, color: color, fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            color: color,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                     ],
@@ -305,27 +347,38 @@ class _DriverLocationCard extends StatelessWidget {
                 ),
                 // live pill
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.success.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppTheme.success.withOpacity(0.4)),
+                    border: Border.all(
+                      color: AppTheme.success.withOpacity(0.4),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 6, height: 6,
+                        width: 6,
+                        height: 6,
                         decoration: const BoxDecoration(
-                          shape: BoxShape.circle, color: AppTheme.success,
+                          shape: BoxShape.circle,
+                          color: AppTheme.success,
                         ),
                       ),
                       const SizedBox(width: 5),
                       Text(
                         hasLocation ? 'TRACKED' : 'NO GPS',
                         style: GoogleFonts.outfit(
-                          fontSize: 10, fontWeight: FontWeight.w800,
-                          color: hasLocation ? AppTheme.success : AppTheme.warning, letterSpacing: 1.2,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: hasLocation
+                              ? AppTheme.success
+                              : AppTheme.warning,
+                          letterSpacing: 1.2,
                         ),
                       ),
                     ],
@@ -343,12 +396,24 @@ class _DriverLocationCard extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _CoordRow(label: 'LAT', value: lat.toStringAsFixed(6), color: color),
+                  _CoordRow(
+                    label: 'LAT',
+                    value: lat.toStringAsFixed(6),
+                    color: color,
+                  ),
                   const SizedBox(height: 6),
-                  _CoordRow(label: 'LNG', value: lng.toStringAsFixed(6), color: color),
+                  _CoordRow(
+                    label: 'LNG',
+                    value: lng.toStringAsFixed(6),
+                    color: color,
+                  ),
                   if (accuracy != null) ...[
                     const SizedBox(height: 6),
-                    _CoordRow(label: 'ACC', value: accuracy, color: AppTheme.textMuted),
+                    _CoordRow(
+                      label: 'ACC',
+                      value: accuracy,
+                      color: AppTheme.textMuted,
+                    ),
                   ],
                 ],
               ),
@@ -357,13 +422,17 @@ class _DriverLocationCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.access_time_rounded,
-                      size: 12, color: AppTheme.textMuted),
+                  const Icon(
+                    Icons.access_time_rounded,
+                    size: 12,
+                    color: AppTheme.textMuted,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     'Updated ${DateFormat('HH:mm:ss').format(ts)}',
                     style: GoogleFonts.outfit(
-                      fontSize: 11, color: AppTheme.textMuted,
+                      fontSize: 11,
+                      color: AppTheme.textMuted,
                     ),
                   ),
                 ],
@@ -380,7 +449,11 @@ class _CoordRow extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
-  const _CoordRow({required this.label, required this.value, required this.color});
+  const _CoordRow({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -391,8 +464,10 @@ class _CoordRow extends StatelessWidget {
           child: Text(
             label,
             style: GoogleFonts.jetBrainsMono(
-              fontSize: 10, color: color.withOpacity(0.8),
-              fontWeight: FontWeight.w600, letterSpacing: 1.5,
+              fontSize: 10,
+              color: color.withOpacity(0.8),
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.5,
             ),
           ),
         ),
@@ -400,7 +475,9 @@ class _CoordRow extends StatelessWidget {
         Text(
           value,
           style: GoogleFonts.jetBrainsMono(
-            fontSize: 13, color: AppTheme.textPrimary, fontWeight: FontWeight.w500,
+            fontSize: 13,
+            color: AppTheme.textPrimary,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
@@ -422,15 +499,25 @@ class _EmptyState extends StatelessWidget {
               shape: BoxShape.circle,
               color: AppTheme.textMuted.withOpacity(0.08),
             ),
-            child: const Icon(Icons.location_off_rounded,
-                size: 40, color: AppTheme.textMuted),
+            child: const Icon(
+              Icons.location_off_rounded,
+              size: 40,
+              color: AppTheme.textMuted,
+            ),
           ),
           const SizedBox(height: 16),
-          Text('No drivers are currently active',
-              style: GoogleFonts.outfit(color: AppTheme.textSecondary, fontSize: 15)),
+          Text(
+            'No drivers are currently active',
+            style: GoogleFonts.outfit(
+              color: AppTheme.textSecondary,
+              fontSize: 15,
+            ),
+          ),
           const SizedBox(height: 6),
-          Text('Positions will appear here once drivers start trips',
-              style: GoogleFonts.outfit(color: AppTheme.textMuted, fontSize: 12)),
+          Text(
+            'Positions will appear here once drivers start trips',
+            style: GoogleFonts.outfit(color: AppTheme.textMuted, fontSize: 12),
+          ),
         ],
       ),
     );

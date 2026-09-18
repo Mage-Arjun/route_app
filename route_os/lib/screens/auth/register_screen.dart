@@ -30,9 +30,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   @override
   void initState() {
     super.initState();
-    _slideCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
-    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOutCubic));
+    _slideCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.12),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOutCubic));
     _slideCtrl.forward();
   }
 
@@ -70,12 +75,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              e.toString().contains('400') ? 'Email already registered.' : 'Registration failed. Try again.',
+              e.toString().contains('400')
+                  ? 'Email already registered.'
+                  : 'Registration failed. Try again.',
               style: GoogleFonts.outfit(color: Colors.white),
             ),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -104,13 +113,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                   ),
                 ),
                 padding: const EdgeInsets.all(16),
-                child: const Icon(Icons.check_rounded, size: 36, color: Color(0xFF0A0D14)),
+                child: const Icon(
+                  Icons.check_rounded,
+                  size: 36,
+                  color: Color(0xFF0A0D14),
+                ),
               ),
               const SizedBox(height: 20),
               Text(
                 'Account Created!',
                 style: GoogleFonts.outfit(
-                  fontSize: 22, fontWeight: FontWeight.w700,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
                   color: AppTheme.textPrimary,
                 ),
               ),
@@ -119,7 +133,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                 'Your account is pending admin approval.\nYou will be notified once activated.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(
-                  fontSize: 14, color: AppTheme.textSecondary,
+                  fontSize: 14,
+                  color: AppTheme.textSecondary,
                 ),
               ),
               const SizedBox(height: 24),
@@ -137,12 +152,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                     },
                     borderRadius: BorderRadius.circular(14),
                     child: const SizedBox(
-                      width: double.infinity, height: 48,
+                      width: double.infinity,
+                      height: 48,
                       child: Center(
                         child: Text(
                           'Back to Sign In',
                           style: TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
                             color: Color(0xFF0A0D14),
                           ),
                         ),
@@ -167,16 +184,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         body: Stack(
           children: [
             // bg gradient
-            Container(decoration: const BoxDecoration(gradient: AppTheme.bgGradient)),
+            Container(
+              decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
+            ),
             Positioned(
-              top: -80, right: -80,
+              top: -80,
+              right: -80,
               child: Container(
-                width: 280, height: 280,
+                width: 280,
+                height: 280,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: RadialGradient(colors: [
-                    AppTheme.purple.withOpacity(0.12), Colors.transparent,
-                  ]),
+                  gradient: RadialGradient(
+                    colors: [
+                      AppTheme.purple.withOpacity(0.12),
+                      Colors.transparent,
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -185,20 +209,27 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                 children: [
                   // header
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
                     child: Row(
                       children: [
                         IconButton(
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                              color: AppTheme.textSecondary, size: 20),
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: AppTheme.textSecondary,
+                            size: 20,
+                          ),
                         ),
                         Expanded(
                           child: Text(
                             'Driver Registration',
                             textAlign: TextAlign.center,
                             style: GoogleFonts.outfit(
-                              fontSize: 20, fontWeight: FontWeight.w700,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
                               color: AppTheme.textPrimary,
                             ),
                           ),
@@ -222,22 +253,33 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                 // ── status pill ────────────────────────────
                                 Center(
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 6,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: AppTheme.warning.withOpacity(0.15),
                                       borderRadius: BorderRadius.circular(100),
-                                      border: Border.all(color: AppTheme.warning.withOpacity(0.4)),
+                                      border: Border.all(
+                                        color: AppTheme.warning.withOpacity(
+                                          0.4,
+                                        ),
+                                      ),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(Icons.schedule_rounded,
-                                            size: 14, color: AppTheme.warning),
+                                        const Icon(
+                                          Icons.schedule_rounded,
+                                          size: 14,
+                                          color: AppTheme.warning,
+                                        ),
                                         const SizedBox(width: 6),
                                         Text(
                                           'Requires admin approval after sign up',
                                           style: GoogleFonts.outfit(
-                                            fontSize: 11, color: AppTheme.warning,
+                                            fontSize: 11,
+                                            color: AppTheme.warning,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
@@ -252,46 +294,80 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                   padding: const EdgeInsets.all(24),
                                   child: Column(
                                     children: [
-                                      _Field(ctrl: _nameCtrl, label: 'Full Name',
-                                          icon: Icons.person_outline_rounded,
-                                          validator: (v) => v != null && v.length >= 2
-                                              ? null : 'Enter your name'),
+                                      _Field(
+                                        ctrl: _nameCtrl,
+                                        label: 'Full Name',
+                                        icon: Icons.person_outline_rounded,
+                                        validator: (v) =>
+                                            v != null && v.length >= 2
+                                            ? null
+                                            : 'Enter your name',
+                                      ),
                                       const SizedBox(height: 14),
-                                      _Field(ctrl: _emailCtrl, label: 'Email Address',
-                                          icon: Icons.alternate_email_rounded,
-                                          type: TextInputType.emailAddress,
-                                          validator: (v) => v != null && v.contains('@')
-                                              ? null : 'Enter valid email'),
+                                      _Field(
+                                        ctrl: _emailCtrl,
+                                        label: 'Email Address',
+                                        icon: Icons.alternate_email_rounded,
+                                        type: TextInputType.emailAddress,
+                                        validator: (v) =>
+                                            v != null && v.contains('@')
+                                            ? null
+                                            : 'Enter valid email',
+                                      ),
                                       const SizedBox(height: 14),
-                                      _Field(ctrl: _phoneCtrl, label: 'Phone (optional)',
-                                          icon: Icons.phone_outlined,
-                                          type: TextInputType.phone),
+                                      _Field(
+                                        ctrl: _phoneCtrl,
+                                        label: 'Phone (optional)',
+                                        icon: Icons.phone_outlined,
+                                        type: TextInputType.phone,
+                                      ),
                                       const SizedBox(height: 14),
-                                      _Field(ctrl: _passwordCtrl, label: 'Password',
-                                          icon: Icons.lock_outline_rounded,
-                                          obscure: _obscure,
-                                          suffix: IconButton(
-                                            icon: Icon(
-                                              _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                              color: AppTheme.textSecondary, size: 20,
-                                            ),
-                                            onPressed: () => setState(() => _obscure = !_obscure),
+                                      _Field(
+                                        ctrl: _passwordCtrl,
+                                        label: 'Password',
+                                        icon: Icons.lock_outline_rounded,
+                                        obscure: _obscure,
+                                        suffix: IconButton(
+                                          icon: Icon(
+                                            _obscure
+                                                ? Icons.visibility_outlined
+                                                : Icons.visibility_off_outlined,
+                                            color: AppTheme.textSecondary,
+                                            size: 20,
                                           ),
-                                          validator: (v) => v != null && v.length >= 6
-                                              ? null : 'Min 6 characters'),
-                                      const SizedBox(height: 14),
-                                      _Field(ctrl: _confirmCtrl, label: 'Confirm Password',
-                                          icon: Icons.lock_outline_rounded,
-                                          obscure: _obscureConfirm,
-                                          suffix: IconButton(
-                                            icon: Icon(
-                                              _obscureConfirm ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                              color: AppTheme.textSecondary, size: 20,
-                                            ),
-                                            onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                                          onPressed: () => setState(
+                                            () => _obscure = !_obscure,
                                           ),
-                                          validator: (v) => v == _passwordCtrl.text
-                                              ? null : 'Passwords do not match'),
+                                        ),
+                                        validator: (v) =>
+                                            v != null && v.length >= 6
+                                            ? null
+                                            : 'Min 6 characters',
+                                      ),
+                                      const SizedBox(height: 14),
+                                      _Field(
+                                        ctrl: _confirmCtrl,
+                                        label: 'Confirm Password',
+                                        icon: Icons.lock_outline_rounded,
+                                        obscure: _obscureConfirm,
+                                        suffix: IconButton(
+                                          icon: Icon(
+                                            _obscureConfirm
+                                                ? Icons.visibility_outlined
+                                                : Icons.visibility_off_outlined,
+                                            color: AppTheme.textSecondary,
+                                            size: 20,
+                                          ),
+                                          onPressed: () => setState(
+                                            () => _obscureConfirm =
+                                                !_obscureConfirm,
+                                          ),
+                                        ),
+                                        validator: (v) =>
+                                            v == _passwordCtrl.text
+                                            ? null
+                                            : 'Passwords do not match',
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -303,8 +379,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                     borderRadius: BorderRadius.circular(14),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppTheme.primary.withOpacity(0.4),
-                                        blurRadius: 20, spreadRadius: -4, offset: const Offset(0, 6),
+                                        color: AppTheme.primary.withOpacity(
+                                          0.4,
+                                        ),
+                                        blurRadius: 20,
+                                        spreadRadius: -4,
+                                        offset: const Offset(0, 6),
                                       ),
                                     ],
                                   ),
@@ -314,20 +394,29 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                       onTap: _loading ? null : _register,
                                       borderRadius: BorderRadius.circular(14),
                                       child: SizedBox(
-                                        width: double.infinity, height: 52,
+                                        width: double.infinity,
+                                        height: 52,
                                         child: Center(
                                           child: _loading
                                               ? const SizedBox(
-                                                  width: 22, height: 22,
-                                                  child: CircularProgressIndicator(
-                                                    strokeWidth: 2.5, color: Color(0xFF0A0D14),
-                                                  ),
+                                                  width: 22,
+                                                  height: 22,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                        strokeWidth: 2.5,
+                                                        color: Color(
+                                                          0xFF0A0D14,
+                                                        ),
+                                                      ),
                                                 )
                                               : Text(
                                                   'Create Driver Account',
                                                   style: GoogleFonts.outfit(
-                                                    fontWeight: FontWeight.w700, fontSize: 16,
-                                                    color: const Color(0xFF0A0D14),
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: 16,
+                                                    color: const Color(
+                                                      0xFF0A0D14,
+                                                    ),
                                                   ),
                                                 ),
                                         ),

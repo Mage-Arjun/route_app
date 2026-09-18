@@ -33,7 +33,11 @@ class LocationService {
   }
 
   /// Start GPS tracking and background push every [pushIntervalSecs] seconds.
-  Future<void> start({int? tripId, int? vehicleId, int pushIntervalSecs = 10}) async {
+  Future<void> start({
+    int? tripId,
+    int? vehicleId,
+    int pushIntervalSecs = 10,
+  }) async {
     if (_running) return;
     final granted = await requestPermissions();
     if (!granted) return;
@@ -44,7 +48,7 @@ class LocationService {
 
     const settings = LocationSettings(
       accuracy: LocationAccuracy.bestForNavigation,
-      distanceFilter: 3,    // meters — only emit if moved ≥ 3m
+      distanceFilter: 3, // meters — only emit if moved ≥ 3m
     );
 
     _positionSub = Geolocator.getPositionStream(locationSettings: settings)
@@ -64,7 +68,9 @@ class LocationService {
           accuracy: pos.accuracy,
           tripId: _activeTripId,
         );
-      } catch (_) {/* silent — offline tolerance */}
+      } catch (_) {
+        /* silent — offline tolerance */
+      }
     });
   }
 

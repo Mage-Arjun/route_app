@@ -61,6 +61,7 @@ class RouteCreate(BaseModel):
     code: str = Field(min_length=2, max_length=32)
     name: str = Field(min_length=2, max_length=160)
     description: str | None = None
+    geometry: list[list[float]] = Field(default_factory=list, min_length=0)
     assigned_driver_id: int | None = None
     assigned_vehicle_id: int | None = None
     status: str = Field(default="active", max_length=24)
@@ -69,6 +70,7 @@ class RouteCreate(BaseModel):
 class RouteUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=2, max_length=160)
     description: str | None = None
+    geometry: list[list[float]] | None = None
     assigned_driver_id: int | None = None
     assigned_vehicle_id: int | None = None
     status: str | None = Field(default=None, max_length=24)

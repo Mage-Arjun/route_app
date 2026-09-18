@@ -9,7 +9,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+import httpx
+from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
@@ -40,6 +41,68 @@ UPLOAD_ROOT = Path(__file__).resolve().parent / "data" / "uploads"
 UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
 MAX_UPLOAD_BYTES = 8 * 1024 * 1024
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
+
+
+@router.get("/geo/search")
+async def search_places(q: str, _: User = Depends(current_user)):
+    """Search worldwide places through Nominatim for the route planner.
+
+    The backend proxies the request so the mobile app does not need to deal
+    with browser restrictions or expose provider details in the UI.
+    """
+    query = q.strip()
+    if len(query) < 3:
+        return []
+    try:
+        async with httpx.AsyncClient(timeout=8, headers={"User-Agent": "RouteOS/1.0 route-planner"}) as client:
+            response = await client.get(
+                "https://nominatim.openstreetmap.org/search",
+                params={"q": query, "format": "jsonv2", "limit": 6, "addressdetails": 1},
+            )
+            response.raise_for_status()
+    except httpx.HTTPError as error:
+        raise HTTPException(502, f"Location search unavailable: {error}") from error
+    return [
+        {
+            "name": item.get("display_name", ""),
+            "latitude": float(item["lat"]),
+            "longitude": float(item["lon"]),
+            "type": item.get("type"),
+        }
+        for item in response.json()
+        if item.get("lat") and item.get("lon")
+    ]
+
+
+@router.post("/geo/route")
+async def route_between_waypoints(
+    points: list[list[float]] = Body(..., min_length=2),
+    _: User = Depends(current_user),
+):
+    """Turn operator waypoints into a road-following GeoJSON path."""
+    if any(len(point) < 2 for point in points):
+        raise HTTPException(422, "Each waypoint must be [longitude, latitude]")
+    coordinates = ";".join(f"{point[0]},{point[1]}" for point in points)
+    try:
+        async with httpx.AsyncClient(
+            timeout=15, headers={"User-Agent": "RouteOS/1.0 route-planner"}
+        ) as client:
+            response = await client.get(
+                f"https://router.project-osrm.org/route/v1/driving/{coordinates}",
+                params={"overview": "full", "geometries": "geojson", "steps": "false"},
+            )
+            response.raise_for_status()
+            data = response.json()
+    except httpx.HTTPError as error:
+        raise HTTPException(502, f"Road routing unavailable: {error}") from error
+    routes = data.get("routes") or []
+    if not routes:
+        raise HTTPException(422, "No drivable route found between those points")
+    return {
+        "geometry": routes[0]["geometry"]["coordinates"],
+        "distance_m": routes[0].get("distance"),
+        "duration_s": routes[0].get("duration"),
+    }
 
 
 def _user_json(user: User | None):
@@ -74,6 +137,7 @@ def _route_json(db: Session, item: Route, include_stops: bool = True):
         "code": item.code,
         "name": item.name,
         "description": item.description,
+        "geometry": item.geometry or [],
         "status": item.status,
         "assigned_driver_id": item.assigned_driver_id,
         "assigned_vehicle_id": item.assigned_vehicle_id,
@@ -188,7 +252,7 @@ async def _event(db: Session, event_type: str, entity_type: str, entity_id: int 
 
 
 def _assert_assignment(db: Session, route: Route, user: User):
-    if user.role == "driver" and route.assigned_driver_id != user.id:
+    if user.role == "driver" and route.assigned_driver_id not in (None, user.id):
         raise HTTPException(403, "This route is not assigned to you")
 
 
@@ -279,7 +343,10 @@ def _validate_route_assignment(db: Session, driver_id: int | None, vehicle_id: i
 def routes(driver_id: int | None = None, status: str | None = None, search: str | None = None, db: Session = Depends(get_db), user: User = Depends(current_user)):
     query = db.query(Route)
     if user.role == "driver":
-        query = query.filter(Route.assigned_driver_id == user.id)
+        # Drivers can choose an operator-published route that is unassigned,
+        # or continue using a route already assigned to them. Routes assigned
+        # to another driver remain private.
+        query = query.filter(or_(Route.assigned_driver_id == user.id, Route.assigned_driver_id.is_(None)))
     elif driver_id:
         query = query.filter(Route.assigned_driver_id == driver_id)
     if status:
@@ -402,8 +469,13 @@ async def create_trip(body: TripCreate, db: Session = Depends(get_db), user: Use
     driver_id = user.id if user.role == "driver" else body.driver_id or route.assigned_driver_id
     if not driver_id:
         raise HTTPException(422, "A driver must be assigned before starting a trip")
-    if user.role == "driver" and route.assigned_driver_id != user.id:
-        raise HTTPException(403, "This route is not assigned to you")
+    if user.role == "driver":
+        if route.assigned_driver_id not in (None, user.id):
+            raise HTTPException(403, "This route is assigned to another driver")
+        # Claiming is explicit through the driver's start action. Operators
+        # can still pre-assign a route from the route form.
+        if route.assigned_driver_id is None:
+            route.assigned_driver_id = user.id
     driver = db.get(User, driver_id)
     if not driver or driver.role != "driver":
         raise HTTPException(422, "Trip driver must be a driver account")

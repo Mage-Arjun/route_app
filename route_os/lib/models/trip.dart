@@ -54,19 +54,31 @@ class TripStop {
     routeStopId: json['route_stop_id'],
     customerId: json['customer_id'],
     sequence: json['sequence'],
-    arrivalTime: json['arrival_time'] != null ? DateTime.parse(json['arrival_time']) : null,
-    departureTime: json['departure_time'] != null ? DateTime.parse(json['departure_time']) : null,
+    arrivalTime: json['arrival_time'] != null
+        ? DateTime.parse(json['arrival_time'])
+        : null,
+    departureTime: json['departure_time'] != null
+        ? DateTime.parse(json['departure_time'])
+        : null,
     status: json['status'],
     notes: json['notes'],
     driverNotes: json['driver_notes'],
-    customer: json['customer'] != null ? Customer.fromJson(json['customer']) : null,
+    customer: json['customer'] != null
+        ? Customer.fromJson(json['customer'])
+        : null,
     receiverName: json['receiver_name'],
     signatureData: json['signature_data'],
     photoUrl: json['photo_url'],
     failureReason: json['failure_reason'],
-    deliveryLatitude: json['delivery_latitude'] != null ? (json['delivery_latitude'] as num).toDouble() : null,
-    deliveryLongitude: json['delivery_longitude'] != null ? (json['delivery_longitude'] as num).toDouble() : null,
-    completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at']) : null,
+    deliveryLatitude: json['delivery_latitude'] != null
+        ? (json['delivery_latitude'] as num).toDouble()
+        : null,
+    deliveryLongitude: json['delivery_longitude'] != null
+        ? (json['delivery_longitude'] as num).toDouble()
+        : null,
+    completedAt: json['completed_at'] != null
+        ? DateTime.parse(json['completed_at'])
+        : null,
   );
 }
 
@@ -113,7 +125,9 @@ class Trip {
     driverId: json['driver_id'],
     vehicleId: json['vehicle_id'],
     date: DateTime.parse(json['date']),
-    startTime: json['start_time'] != null ? DateTime.parse(json['start_time']) : null,
+    startTime: json['start_time'] != null
+        ? DateTime.parse(json['start_time'])
+        : null,
     endTime: json['end_time'] != null ? DateTime.parse(json['end_time']) : null,
     totalDistanceKm: (json['total_distance_km'] as num).toDouble(),
     completedStops: json['completed_stops'],

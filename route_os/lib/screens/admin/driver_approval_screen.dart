@@ -10,7 +10,8 @@ class DriverApprovalScreen extends ConsumerStatefulWidget {
   const DriverApprovalScreen({super.key});
 
   @override
-  ConsumerState<DriverApprovalScreen> createState() => _DriverApprovalScreenState();
+  ConsumerState<DriverApprovalScreen> createState() =>
+      _DriverApprovalScreenState();
 }
 
 class _DriverApprovalScreenState extends ConsumerState<DriverApprovalScreen>
@@ -40,7 +41,7 @@ class _DriverApprovalScreenState extends ConsumerState<DriverApprovalScreen>
       if (mounted) {
         setState(() {
           _pending = all.where((u) => u.status == 'pending').toList();
-          _active  = all.where((u) => u.status == 'active').toList();
+          _active = all.where((u) => u.status == 'active').toList();
           _loading = false;
         });
       }
@@ -56,10 +57,18 @@ class _DriverApprovalScreenState extends ConsumerState<DriverApprovalScreen>
       if (mounted) {
         setState(() {
           _pending.remove(user);
-          _active.insert(0, User(
-            id: user.id, name: user.name, email: user.email, role: user.role,
-            phone: user.phone, status: 'active', createdAt: user.createdAt,
-          ));
+          _active.insert(
+            0,
+            User(
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              role: user.role,
+              phone: user.phone,
+              status: 'active',
+              createdAt: user.createdAt,
+            ),
+          );
         });
         _showSnack('✓ ${user.name} approved', AppTheme.success);
       }
@@ -108,7 +117,10 @@ class _DriverApprovalScreenState extends ConsumerState<DriverApprovalScreen>
         ],
         bottom: TabBar(
           controller: _tabCtrl,
-          labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
+          labelStyle: GoogleFonts.inter(
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
           unselectedLabelStyle: GoogleFonts.inter(fontSize: 13),
           tabs: [
             Tab(
@@ -119,15 +131,21 @@ class _DriverApprovalScreenState extends ConsumerState<DriverApprovalScreen>
                   if (_pending.isNotEmpty) ...[
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFF6B35),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         '${_pending.length}',
-                        style: const TextStyle(fontSize: 11, color: Colors.white,
-                            fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -142,10 +160,7 @@ class _DriverApprovalScreenState extends ConsumerState<DriverApprovalScreen>
           ? const Center(child: CircularProgressIndicator())
           : TabBarView(
               controller: _tabCtrl,
-              children: [
-                _pendingTab(),
-                _activeTab(),
-              ],
+              children: [_pendingTab(), _activeTab()],
             ),
     );
   }
@@ -156,12 +171,19 @@ class _DriverApprovalScreenState extends ConsumerState<DriverApprovalScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.check_circle_outline_rounded,
-                size: 56, color: Color(0xFF22C55E)),
+            const Icon(
+              Icons.check_circle_outline_rounded,
+              size: 56,
+              color: Color(0xFF22C55E),
+            ),
             const SizedBox(height: 12),
-            Text('No pending approvals', style: GoogleFonts.inter(
-              fontSize: 16, color: Colors.grey.shade600,
-            )),
+            Text(
+              'No pending approvals',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                color: Colors.grey.shade600,
+              ),
+            ),
           ],
         ),
       );
@@ -182,10 +204,14 @@ class _DriverApprovalScreenState extends ConsumerState<DriverApprovalScreen>
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Reject ${user.name}?',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
-        content: Text('This will mark the account as inactive.',
-            style: GoogleFonts.inter()),
+        title: Text(
+          'Reject ${user.name}?',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'This will mark the account as inactive.',
+          style: GoogleFonts.inter(),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -205,8 +231,10 @@ class _DriverApprovalScreenState extends ConsumerState<DriverApprovalScreen>
   Widget _activeTab() {
     if (_active.isEmpty) {
       return Center(
-        child: Text('No active drivers yet',
-            style: GoogleFonts.inter(color: Colors.grey.shade600)),
+        child: Text(
+          'No active drivers yet',
+          style: GoogleFonts.inter(color: Colors.grey.shade600),
+        ),
       );
     }
     return ListView.builder(
@@ -246,7 +274,8 @@ class _PendingCard extends StatelessWidget {
                   child: Text(
                     user.name[0].toUpperCase(),
                     style: GoogleFonts.outfit(
-                      fontSize: 18, fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
                       color: const Color(0xFFF59E0B),
                     ),
                   ),
@@ -259,28 +288,39 @@ class _PendingCard extends StatelessWidget {
                       Text(
                         user.name,
                         style: GoogleFonts.inter(
-                            fontSize: 15, fontWeight: FontWeight.w700),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       Text(
                         user.email,
                         style: GoogleFonts.inter(
-                            fontSize: 12, color: Colors.grey.shade600),
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF59E0B).withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.5)),
+                    border: Border.all(
+                      color: const Color(0xFFF59E0B).withOpacity(0.5),
+                    ),
                   ),
                   child: Text(
                     'PENDING',
                     style: GoogleFonts.inter(
-                      fontSize: 9, fontWeight: FontWeight.w800,
-                      color: const Color(0xFFF59E0B), letterSpacing: 1.2,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFFF59E0B),
+                      letterSpacing: 1.2,
                     ),
                   ),
                 ),
@@ -290,21 +330,37 @@ class _PendingCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.phone_outlined, size: 14, color: Colors.grey),
+                  const Icon(
+                    Icons.phone_outlined,
+                    size: 14,
+                    color: Colors.grey,
+                  ),
                   const SizedBox(width: 6),
-                  Text(user.phone!,
-                      style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600)),
+                  Text(
+                    user.phone!,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
                 ],
               ),
             ],
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey),
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 14,
+                  color: Colors.grey,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   'Applied ${DateFormat('MMM d, yyyy').format(user.createdAt)}',
-                  style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
                 ),
               ],
             ),
@@ -362,14 +418,19 @@ class _ActiveDriverCard extends StatelessWidget {
           child: Text(
             user.name[0].toUpperCase(),
             style: GoogleFonts.outfit(
-              fontWeight: FontWeight.w800, color: const Color(0xFF1B5E20),
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF1B5E20),
             ),
           ),
         ),
-        title: Text(user.name,
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
-        subtitle: Text(user.email,
-            style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600)),
+        title: Text(
+          user.name,
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+        subtitle: Text(
+          user.email,
+          style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600),
+        ),
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
@@ -379,8 +440,10 @@ class _ActiveDriverCard extends StatelessWidget {
           child: Text(
             'ACTIVE',
             style: GoogleFonts.inter(
-              fontSize: 9, fontWeight: FontWeight.w800,
-              color: const Color(0xFF22C55E), letterSpacing: 1.2,
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF22C55E),
+              letterSpacing: 1.2,
             ),
           ),
         ),

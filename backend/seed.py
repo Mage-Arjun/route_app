@@ -6,6 +6,24 @@ from config import settings
 from models import Alert, Assignment, Customer, Event, Journey, Location, Person, Route, RouteStop, Trip, TripStop, User, Vehicle, now
 from auth import hash_password
 
+
+def seed_quick_accounts(db: Session) -> bool:
+    """Create only local quick-login identities; no operational records."""
+    accounts = [
+        ("admin@routeos.local", "admin123", "admin"),
+        ("operator@routeos.local", "operator123", "operator"),
+        ("driver@routeos.local", "driver123", "driver"),
+    ]
+    created = False
+    for email, password, role in accounts:
+        if db.query(User).filter(User.email == email).first():
+            continue
+        db.add(User(email=email, password_hash=hash_password(password), role=role, status="active"))
+        created = True
+    if created:
+        db.commit()
+    return created
+
 def seed(db: Session):
     if db.query(User).first(): return False
     admin = User(email="admin@routeos.local", password_hash=hash_password("admin123"), role="admin")

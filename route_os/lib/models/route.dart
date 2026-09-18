@@ -34,7 +34,9 @@ class RouteStop {
     serviceDurationMins: json['service_duration_mins'],
     notes: json['notes'],
     status: json['status'],
-    customer: json['customer'] != null ? Customer.fromJson(json['customer']) : null,
+    customer: json['customer'] != null
+        ? Customer.fromJson(json['customer'])
+        : null,
   );
 }
 
@@ -43,6 +45,9 @@ class Route {
   final String code;
   final String name;
   final String? area;
+
+  /// Ordered [longitude, latitude] pairs saved by the route planner.
+  final List<List<double>> geometry;
   final String? workingDays;
   final double? startLat;
   final double? startLng;
@@ -64,6 +69,7 @@ class Route {
     this.code = '',
     required this.name,
     this.area,
+    this.geometry = const [],
     this.workingDays,
     this.startLat,
     this.startLng,
@@ -86,6 +92,16 @@ class Route {
     code: json['code'] ?? '',
     name: json['name'],
     area: json['area'] ?? json['description'],
+    geometry: (json['geometry'] as List? ?? const [])
+        .whereType<List>()
+        .where((point) => point.length >= 2)
+        .map(
+          (point) => [
+            (point[0] as num).toDouble(),
+            (point[1] as num).toDouble(),
+          ],
+        )
+        .toList(),
     workingDays: json['working_days'],
     startLat: json['start_lat']?.toDouble(),
     startLng: json['start_lng']?.toDouble(),
@@ -98,13 +114,18 @@ class Route {
     version: json['version'],
     status: json['status'],
     createdAt: DateTime.parse(json['created_at']),
-    assignedDriver: json['assigned_driver'] != null ? User.fromJson(json['assigned_driver']) : null,
-    assignedVehicle: json['assigned_vehicle'] != null ? Vehicle.fromJson(json['assigned_vehicle']) : null,
+    assignedDriver: json['assigned_driver'] != null
+        ? User.fromJson(json['assigned_driver'])
+        : null,
+    assignedVehicle: json['assigned_vehicle'] != null
+        ? Vehicle.fromJson(json['assigned_vehicle'])
+        : null,
     stops: json['stops'] != null
         ? (json['stops'] as List).map((s) => RouteStop.fromJson(s)).toList()
         : [],
   );
 
   List<RouteStop> get activeStops =>
-      stops.where((s) => s.status == 'active').toList()..sort((a, b) => a.sequence.compareTo(b.sequence));
+      stops.where((s) => s.status == 'active').toList()
+        ..sort((a, b) => a.sequence.compareTo(b.sequence));
 }

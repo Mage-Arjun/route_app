@@ -15,8 +15,9 @@ _test_db.close()
 os.environ["DATABASE_URL"] = f"sqlite:///{_test_db.name}"
 os.environ["SEED_DEMO_DATA"] = "false"
 from database import SessionLocal, init_db
-from seed import seed
+from seed import seed, seed_product_demo
 
 init_db()
 with SessionLocal() as _db:
     seed(_db)
+    seed_product_demo(_db)
