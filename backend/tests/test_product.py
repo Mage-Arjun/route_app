@@ -42,6 +42,50 @@ def test_driver_cannot_complete_a_stop_without_receiver_information():
         assert response.status_code == 422
 
 
+def test_driver_can_record_a_stop_from_current_location():
+    with TestClient(app) as client:
+        driver = _login(client, "driver1@routeos.local", "driver123")
+        trip = client.get("/trips", headers=driver).json()[0]
+        response = client.post(
+            f"/trips/{trip['id']}/stops/record",
+            headers=driver,
+            json={
+                "name": "New GPS Stop",
+                "address": "Recorded on route",
+                "latitude": 11.2588,
+                "longitude": 75.7804,
+                "notes": "Added from the driver app",
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["customer"]["name"] == "New GPS Stop"
+        assert response.json()["status"] == "arrived"
+
+
+def test_admin_can_see_driver_phone_location_without_vehicle_assignment():
+    with TestClient(app) as client:
+        driver = _login(client, "driver1@routeos.local", "driver123")
+        trip = client.get("/trips", headers=driver).json()[0]
+        response = client.post(
+            "/drivers/me/location",
+            headers=driver,
+            json={
+                "latitude": 51.5074,
+                "longitude": -0.1278,
+                "accuracy": 4.5,
+                "trip_id": trip["id"],
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["latitude"] == 51.5074
+
+        admin = _login(client, "admin@routeos.local", "admin123")
+        locations = client.get("/drivers/locations", headers=admin)
+        assert locations.status_code == 200
+        driver_location = next(item for item in locations.json() if item["driver_id"] == 3)
+        assert driver_location["longitude"] == -0.1278
+
+
 def test_operator_can_create_customer_and_route_change_is_admin_decided():
     with TestClient(app) as client:
         operator = _login(client, "operator@routeos.local", "operator123")

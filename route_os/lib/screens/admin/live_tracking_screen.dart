@@ -46,7 +46,15 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen>
   Future<void> _fetch() async {
     final api = ref.read(apiServiceProvider);
     try {
-      final data = await api.getLiveLocations();
+      final results = await Future.wait<List<Map<String, dynamic>>>([
+        api.getLiveLocations(),
+        api.getDriverLocations(),
+      ]);
+      final vehicles = results[0];
+      final drivers = results[1]
+          .map((item) => {...item, '_isDriver': true})
+          .toList();
+      final data = [...drivers, ...vehicles];
       if (mounted) {
         setState(() {
           _locations = data;
@@ -193,7 +201,7 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen>
             child: Row(
               children: [
                 Text(
-                  '${_locations.length} vehicle${_locations.length != 1 ? 's' : ''} tracked',
+                  '${_locations.length} live device${_locations.length != 1 ? 's' : ''} tracked',
                   style: GoogleFonts.outfit(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -251,12 +259,16 @@ class _DriverLocationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = data['name'] ?? data['identifier'] ?? 'Vehicle';
+    final name = data['_isDriver'] == true
+        ? (data['driver']?['email'] ?? 'Driver ${data['driver_id']}')
+        : (data['name'] ?? data['identifier'] ?? 'Vehicle');
     final lat = (data['latitude'] as num?)?.toDouble() ?? 0.0;
     final lng = (data['longitude'] as num?)?.toDouble() ?? 0.0;
-    final String? accuracy = null;
+    final accuracy = data['accuracy'] == null
+        ? null
+        : '${(data['accuracy'] as num).toStringAsFixed(1)} m';
     final timestamp = (data['last_seen'] ?? data['updated_at']) as String?;
-    final tripId = data['journey_id'];
+    final tripId = data['trip_id'] ?? data['journey_id'];
     final hasLocation = data['latitude'] != null && data['longitude'] != null;
 
     DateTime? ts;

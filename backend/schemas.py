@@ -40,6 +40,12 @@ class LocationUpdate(BaseModel):
     longitude: float = Field(ge=-180, le=180)
 
 
+class DriverLocationUpdate(LocationUpdate):
+    """A GPS point sent by the logged-in driver from their phone."""
+    accuracy: float | None = Field(default=None, ge=0)
+    trip_id: int | None = None
+
+
 class CustomerCreate(BaseModel):
     code: str = Field(min_length=2, max_length=32)
     name: str = Field(min_length=2, max_length=160)
@@ -81,6 +87,15 @@ class RouteStopCreate(BaseModel):
     sequence: int = Field(ge=1)
     planned_arrival_time: str | None = Field(default=None, max_length=16)
     service_duration_mins: int = Field(default=10, ge=1, le=480)
+    notes: str | None = None
+
+
+class RecordedStopCreate(BaseModel):
+    """The small payload a driver submits when discovering a stop on route."""
+    name: str = Field(min_length=2, max_length=160)
+    address: str | None = None
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
     notes: str | None = None
 
 

@@ -19,15 +19,17 @@ from auth import current_user, hash_password, require_admin, require_driver, req
 from config import settings
 from database import get_db
 from events import event_engine
-from models import Customer, Event, ProofOfDelivery, Route, RouteChange, RouteStop, Trip, TripStop, User, Vehicle
+from models import Customer, DriverLocation, Event, Person, ProofOfDelivery, Route, RouteChange, RouteStop, Trip, TripStop, User, Vehicle
 from schemas import (
     CustomerCreate,
     CustomerUpdate,
+    DriverLocationUpdate,
     ProfileUpdate,
     ReorderStopsRequest,
     RegisterRequest,
     RouteChangeCreate,
     RouteCreate,
+    RecordedStopCreate,
     RouteStopCreate,
     RouteUpdate,
     TripCreate,
@@ -41,6 +43,55 @@ UPLOAD_ROOT = Path(__file__).resolve().parent / "data" / "uploads"
 UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
 MAX_UPLOAD_BYTES = 8 * 1024 * 1024
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
+
+
+def _driver_location_json(db: Session, item: DriverLocation) -> dict:
+    driver = db.get(User, item.driver_id)
+    return {
+        "id": item.id,
+        "driver_id": item.driver_id,
+        "driver": {"id": driver.id, "email": driver.email, "role": driver.role} if driver else None,
+        "trip_id": item.trip_id,
+        "latitude": item.latitude,
+        "longitude": item.longitude,
+        "accuracy": item.accuracy,
+        "last_seen": item.last_seen,
+    }
+
+
+@router.post("/drivers/me/location")
+def update_driver_location(
+    body: DriverLocationUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_driver),
+):
+    """Store the latest location from this driver's phone.
+
+    This deliberately does not require a route or vehicle: GPS belongs to the
+    driver device, so an admin can locate the driver in every trip state.
+    """
+    if body.trip_id is not None:
+        trip = db.get(Trip, body.trip_id)
+        if trip is None or trip.driver_id != user.id:
+            raise HTTPException(403, "This trip does not belong to the driver")
+    item = db.query(DriverLocation).filter(DriverLocation.driver_id == user.id).first()
+    if item is None:
+        item = DriverLocation(driver_id=user.id)
+        db.add(item)
+    item.trip_id = body.trip_id
+    item.latitude = body.latitude
+    item.longitude = body.longitude
+    item.accuracy = body.accuracy
+    item.last_seen = utcnow()
+    db.commit()
+    db.refresh(item)
+    return _driver_location_json(db, item)
+
+
+@router.get("/drivers/locations")
+def driver_locations(db: Session = Depends(get_db), _: User = Depends(require_operator)):
+    """Return the latest phone GPS point for every driver who has reported."""
+    return [_driver_location_json(db, item) for item in db.query(DriverLocation).order_by(DriverLocation.last_seen.desc()).all()]
 
 
 @router.get("/geo/search")
@@ -367,11 +418,23 @@ def route_detail(route_id: int, db: Session = Depends(get_db), user: User = Depe
 
 
 @router.post("/routes")
-async def create_route(body: RouteCreate, db: Session = Depends(get_db), user: User = Depends(require_operator)):
+async def create_route(body: RouteCreate, db: Session = Depends(get_db), user: User = Depends(current_user)):
     if db.query(Route).filter(Route.code == body.code).first():
         raise HTTPException(409, "Route code already exists")
-    _validate_route_assignment(db, body.assigned_driver_id, body.assigned_vehicle_id)
-    item = Route(**body.model_dump(), created_by_id=user.id)
+    if user.role == "driver":
+        # Drivers may create a personal route when the operator workflow is
+        # unavailable. They cannot assign it to another driver or vehicle.
+        person = db.get(Person, user.person_id) if user.person_id else None
+        assigned_driver_id = user.id
+        assigned_vehicle_id = person.current_vehicle_id if person else None
+        values = body.model_dump()
+        values.update(assigned_driver_id=assigned_driver_id, assigned_vehicle_id=assigned_vehicle_id)
+    else:
+        if user.role not in {"admin", "operator"}:
+            raise HTTPException(403, "Operator role required")
+        _validate_route_assignment(db, body.assigned_driver_id, body.assigned_vehicle_id)
+        values = body.model_dump()
+    item = Route(**values, created_by_id=user.id)
     db.add(item)
     db.commit()
     db.refresh(item)
@@ -497,6 +560,19 @@ async def create_trip(body: TripCreate, db: Session = Depends(get_db), user: Use
     return _trip_json(db, trip)
 
 
+@router.post("/trips/{trip_id}/stops/record")
+async def record_trip_stop(
+    trip_id: int,
+    body: RecordedStopCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    # This route is declared before the numeric stop-id route below. FastAPI
+    # therefore treats the literal word "record" as its own action instead
+    # of trying to parse it as an integer stop id.
+    return await _record_trip_stop_impl(trip_id, body, db, user)
+
+
 @router.put("/trips/{trip_id}/stops/{trip_stop_id}")
 async def update_trip_stop(trip_id: int, trip_stop_id: int, body: TripStopUpdate, db: Session = Depends(get_db), user: User = Depends(current_user)):
     trip = db.get(Trip, trip_id)
@@ -533,6 +609,64 @@ async def update_trip_stop(trip_id: int, trip_stop_id: int, body: TripStopUpdate
     db.commit()
     await _event(db, f"TRIP_STOP_{stop.status.upper()}", "trip_stop", stop.id, user.id, {"trip_id": trip_id, "status": stop.status})
     return _trip_stop_json(db, stop)
+
+
+async def _record_trip_stop_impl(
+    trip_id: int,
+    body: RecordedStopCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    """Create a newly discovered customer and attach it to the live trip."""
+    trip = db.get(Trip, trip_id)
+    if not trip:
+        raise HTTPException(404, "Trip not found")
+    if user.role == "driver" and trip.driver_id != user.id:
+        raise HTTPException(403, "This trip is not assigned to you")
+    if trip.status not in {"active", "paused"}:
+        raise HTTPException(409, f"Cannot add a stop to a {trip.status} trip")
+
+    # A short unique code is generated server-side because drivers should not
+    # have to understand the customer-code convention while driving.
+    customer = Customer(
+        code=f"GPS-{uuid4().hex[:10].upper()}",
+        name=body.name.strip(),
+        address=body.address,
+        latitude=body.latitude,
+        longitude=body.longitude,
+        service_notes=body.notes,
+    )
+    db.add(customer)
+    db.flush()
+    next_sequence = (db.query(RouteStop).filter(RouteStop.route_id == trip.route_id).count() + 1)
+    route_stop = RouteStop(
+        route_id=trip.route_id,
+        customer_id=customer.id,
+        sequence=next_sequence,
+        notes=body.notes,
+        status="active",
+    )
+    db.add(route_stop)
+    db.flush()
+    trip_stop = TripStop(
+        trip_id=trip.id,
+        route_stop_id=route_stop.id,
+        customer_id=customer.id,
+        sequence=next_sequence,
+        notes=body.notes,
+        arrival_time=utcnow(),
+        status="arrived",
+        delivery_latitude=body.latitude,
+        delivery_longitude=body.longitude,
+    )
+    db.add(trip_stop)
+    route = db.get(Route, trip.route_id)
+    if route:
+        route.version += 1
+    db.commit()
+    db.refresh(trip_stop)
+    await _event(db, "TRIP_STOP_RECORDED", "trip_stop", trip_stop.id, user.id, {"trip_id": trip.id, "customer_id": customer.id})
+    return _trip_stop_json(db, trip_stop)
 
 
 @router.put("/trips/{trip_id}/complete")

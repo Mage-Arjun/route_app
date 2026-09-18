@@ -15,6 +15,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   static const _style = 'https://demotiles.maplibre.org/style.json';
   MapLibreMapController? _map;
   List<Vehicle> _vehicles = const [];
+  List<Map<String, dynamic>> _drivers = const [];
   bool _loading = true;
   String? _error;
   Timer? _refreshTimer;
@@ -34,24 +35,29 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   Future<void> _load() async {
     try {
-      final vehicles = await ref.read(apiServiceProvider).getVehicles();
+      final api = ref.read(apiServiceProvider);
+      final results = await Future.wait([
+        api.getVehicles(),
+        api.getDriverLocations(),
+      ]);
       if (mounted)
         setState(() {
-          _vehicles = vehicles;
+          _vehicles = results[0] as List<Vehicle>;
+          _drivers = results[1] as List<Map<String, dynamic>>;
           _loading = false;
           _error = null;
         });
-      await _drawVehicles();
+      await _drawLiveLocations();
     } catch (_) {
       if (mounted)
         setState(() {
           _loading = false;
-          _error = 'Unable to load vehicle locations';
+          _error = 'Unable to load live driver locations';
         });
     }
   }
 
-  Future<void> _drawVehicles() async {
+  Future<void> _drawLiveLocations() async {
     final map = _map;
     if (map == null) return;
     await map.clearSymbols();
@@ -72,12 +78,28 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           ),
         )
         .toList();
+    points.addAll(
+      _drivers
+          .where((d) => d['latitude'] != null && d['longitude'] != null)
+          .map(
+            (d) => SymbolOptions(
+              geometry: LatLng(
+                (d['latitude'] as num).toDouble(),
+                (d['longitude'] as num).toDouble(),
+              ),
+              textField: d['driver']?['email'] ?? 'Driver ${d['driver_id']}',
+              textColor: '#C2410C',
+              textSize: 12,
+              iconImage: 'marker-15',
+            ),
+          ),
+    );
     if (points.isNotEmpty) await map.addSymbols(points);
   }
 
   void _onMapCreated(MapLibreMapController controller) {
     _map = controller;
-    _drawVehicles();
+    _drawLiveLocations();
   }
 
   @override
@@ -95,7 +117,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           ),
           styleString: _style,
           onMapCreated: _onMapCreated,
-          onStyleLoadedCallback: _drawVehicles,
+          onStyleLoadedCallback: _drawLiveLocations,
           compassEnabled: true,
           // Admin tracking uses driver vehicle positions from the backend;
           // do not start a second native location layer for the admin device.
@@ -121,7 +143,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           child: Card(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Text('${_vehicles.length} vehicles'),
+              child: Text(
+                '${_drivers.length} drivers • ${_vehicles.length} vehicles',
+              ),
             ),
           ),
         ),

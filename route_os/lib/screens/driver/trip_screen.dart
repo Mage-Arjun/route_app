@@ -46,9 +46,20 @@ class _TripScreenState extends ConsumerState<TripScreen>
   }
 
   Future<void> _startGpsTracking(int? vehicleId) async {
-    if (vehicleId == null) return;
     final granted = await LocationService.requestPermissions();
-    if (!granted) return;
+    if (!granted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Enable device Location and allow RouteOS location permission.',
+            ),
+            backgroundColor: AppTheme.warning,
+          ),
+        );
+      }
+      return;
+    }
 
     final api = ref.read(apiServiceProvider);
     _locationService = LocationService(api);
@@ -58,10 +69,7 @@ class _TripScreenState extends ConsumerState<TripScreen>
       pushIntervalSecs: 8,
     );
 
-    const settings = LocationSettings(
-      accuracy: LocationAccuracy.bestForNavigation,
-      distanceFilter: 3, // Capture every 3m moved
-    );
+    final settings = LocationService.trackingSettings();
 
     _positionSub = Geolocator.getPositionStream(locationSettings: settings)
         .listen((pos) {
@@ -88,7 +96,16 @@ class _TripScreenState extends ConsumerState<TripScreen>
           _livePathPoints.add(_currentPosition!);
         });
       }
-    } catch (_) {}
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('GPS could not get a fresh fix: $error'),
+            backgroundColor: AppTheme.warning,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -109,6 +126,14 @@ class _TripScreenState extends ConsumerState<TripScreen>
           _loading = false;
         });
         await _startGpsTracking(trip.vehicleId);
+        if (mounted && _locationService?.lastError != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('GPS warning: ${_locationService!.lastError}'),
+              backgroundColor: AppTheme.warning,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) setState(() => _loading = false);
@@ -442,7 +467,7 @@ class _TripScreenState extends ConsumerState<TripScreen>
                           setModalState(() => isSaving = true);
                           try {
                             final api = ref.read(apiServiceProvider);
-                            await api.quickAddStop(_trip!.routeId, {
+                            await api.recordStop(widget.tripId, {
                               'name': name,
                               'latitude': lat,
                               'longitude': lng,

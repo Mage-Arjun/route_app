@@ -181,6 +181,18 @@ class Trip(BaseModel):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
 
 
+class DriverLocation(BaseModel):
+    """The driver's latest phone GPS fix, independent of vehicles or routes."""
+    __tablename__ = "driver_locations"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    driver_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True, index=True)
+    trip_id: Mapped[int | None] = mapped_column(ForeignKey("trips.id"), index=True)
+    latitude: Mapped[float] = mapped_column(Float)
+    longitude: Mapped[float] = mapped_column(Float)
+    accuracy: Mapped[float | None] = mapped_column(Float)
+    last_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, index=True)
+
+
 class TripStop(BaseModel):
     __tablename__ = "trip_stops"
     __table_args__ = (UniqueConstraint("trip_id", "sequence", name="uq_trip_stop_sequence"),)

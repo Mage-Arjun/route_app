@@ -4,6 +4,10 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>RouteOS uses your location to record trips and share live vehicle position with operations.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>RouteOS uses your location during an active trip, including when the screen is locked.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

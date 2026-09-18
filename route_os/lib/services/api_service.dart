@@ -53,8 +53,8 @@ class ApiService {
         (await _client.dio.put('/customers/$id', data: data)).data,
       );
 
-  // Fleet and GPS endpoints. GPS updates require the vehicle assigned to the
-  // authenticated driver; a missing vehicle id is intentionally a no-op.
+  // Fleet and GPS endpoints. Driver GPS is stored against the phone user, so
+  // tracking still works when the trip has no vehicle assigned.
   Future<List<Vehicle>> getVehicles() async => (await _client.dio.get(
     '/vehicles',
   )).data.map<Vehicle>((x) => Vehicle.fromJson(x)).toList();
@@ -69,12 +69,41 @@ class ApiService {
     double? accuracy,
     int? tripId,
   }) async {
-    if (vehicleId == null) return;
+    if (vehicleId == null) {
+      await pushDriverLocation(
+        lat: lat,
+        lng: lng,
+        accuracy: accuracy,
+        tripId: tripId,
+      );
+      return;
+    }
     await _client.dio.post(
       '/vehicles/$vehicleId/location',
       data: {'latitude': lat, 'longitude': lng},
     );
   }
+
+  Future<void> pushDriverLocation({
+    required double lat,
+    required double lng,
+    double? accuracy,
+    int? tripId,
+  }) async {
+    await _client.dio.post(
+      '/drivers/me/location',
+      data: {
+        'latitude': lat,
+        'longitude': lng,
+        if (accuracy != null) 'accuracy': accuracy,
+        if (tripId != null) 'trip_id': tripId,
+      },
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getDriverLocations() async =>
+      ((await _client.dio.get('/drivers/locations')).data as List)
+          .cast<Map<String, dynamic>>();
 
   Future<List<Map<String, dynamic>>> getLiveLocations() async =>
       ((await _client.dio.get('/vehicles')).data as List)
@@ -116,9 +145,12 @@ class ApiService {
       Route.fromJson(
         (await _client.dio.post('/routes/$routeId/stops', data: data)).data,
       );
-  Future<Route> quickAddStop(int routeId, Map<String, dynamic> data) async =>
-      throw UnsupportedError(
-        'Create a customer first, then add its customer_id to the route',
+  Future<TripStop> recordStop(int tripId, Map<String, dynamic> data) async =>
+      TripStop.fromJson(
+        (await _client.dio.post(
+          '/trips/$tripId/stops/record',
+          data: data,
+        )).data,
       );
   Future<Route> reorderStops(int routeId, List<int> ids) async =>
       Route.fromJson(

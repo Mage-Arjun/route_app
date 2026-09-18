@@ -11,6 +11,7 @@ import '../../services/location_service.dart';
 import 'trip_screen.dart';
 import 'driver_profile_screen.dart';
 import '../shared/app_drawer.dart';
+import '../admin/route_builder_screen.dart';
 
 class DriverHomeScreen extends ConsumerStatefulWidget {
   const DriverHomeScreen({super.key});
@@ -299,12 +300,66 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     );
   }
 
-  void _showOperatorOnly() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Routes are created and assigned by an operator.'),
+  Future<void> _createPersonalRoute() async {
+    final nameController = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Create route'),
+        content: TextField(
+          controller: nameController,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Route name'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(dialogContext, nameController.text.trim()),
+            child: const Text('Next'),
+          ),
+        ],
       ),
     );
+    nameController.dispose();
+    if (!mounted || name == null || name.isEmpty) return;
+
+    final draft = await Navigator.push<RouteDraft>(
+      context,
+      MaterialPageRoute(builder: (_) => const RouteBuilderScreen()),
+    );
+    if (!mounted || draft == null) return;
+    try {
+      final api = ref.read(apiServiceProvider);
+      final route = await api.createRoute({
+        'code': 'DRIVER-${DateTime.now().millisecondsSinceEpoch}',
+        'name': name,
+        'geometry': draft.geometry,
+      });
+      final trip = await api.startTrip(route.id);
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => TripScreen(tripId: trip.id)),
+      );
+      if (mounted) _loadData();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not create route: $error'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showOperatorOnly() {
+    _createPersonalRoute();
   }
 
   @override
